@@ -6,6 +6,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 配置文件
  *
@@ -24,7 +27,7 @@ public class ConfigProperties {
     @Setter
     @Getter
     @NoArgsConstructor
-    class Web {
+    public class Web {
 
         /**
          * 是否打印堆栈信息， 开发环境可以开启
@@ -32,41 +35,11 @@ public class ConfigProperties {
         private boolean showStack;
 
         /**
-         * 404 错误页面的路径
-         * 使用项目内部的页面，需要添加 "classpath:" 前缀
+         * 错误码和错误页面地址的对应关系
+         * 404 -> classpath:/error/404.html
+         * 500 -> http://www.domain.com/error.html
          */
-        private String page404;
-
-        /**
-         * 500 错误页面的路径
-         * 使用项目内部的页面，需要添加 "classpath:" 前缀
-         */
-        private String page500;
-
-        /**
-         * 获取 404 错误页面的绝对地址
-         */
-        public String getPage404() {
-            return (page404 = getAbsolutePath(page404));
-        }
-
-        /**
-         * 获取 500 错误页面
-         */
-        public String getPage500() {
-            return (page500 = getAbsolutePath(page500));
-        }
-    }
-
-
-    public String getAbsolutePath(String filename) {
-        if (filename.startsWith("classpath:")) {
-            String classloaderRootPath = getClass().getClassLoader().getResource("").getPath();
-            String relativePath = filename.substring(10);
-            relativePath = relativePath.startsWith("/") ? relativePath.substring(1) : relativePath;
-            filename = classloaderRootPath + relativePath;
-        }
-        return filename;
+        private Map<Integer, String> errorPath = new HashMap<>();
     }
 
 }

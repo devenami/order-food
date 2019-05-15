@@ -12,4 +12,5 @@ public class Constant {
 
     public static final String DEFAULT_TEXT_ERROR = "error";
 
+    public static final String DEFAULT_TEXT_UNKNOWN = "known";
 }

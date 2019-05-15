@@ -27,6 +27,10 @@ public class Result<T> {
         return success(null);
     }
 
+    public static <T> Result<T> success(ErrorCode errorCode) {
+        return success(errorCode, null);
+    }
+
     public static <T> Result<T> success(T data) {
         return success(ErrorCode.OK, data);
     }
