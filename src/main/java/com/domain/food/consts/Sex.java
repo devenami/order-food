@@ -1,10 +1,12 @@
-package com.domain.food.domain;
+package com.domain.food.consts;
 
 import com.domain.food.utils.ObjectUtil;
+import lombok.Getter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Getter
 public enum Sex {
 
     MALE(0), FEMALE(1);

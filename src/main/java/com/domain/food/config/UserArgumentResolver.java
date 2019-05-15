@@ -1,5 +1,6 @@
 package com.domain.food.config;
 
+import com.domain.food.consts.Sex;
 import com.domain.food.domain.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -28,7 +29,10 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest nativeWebRequest,
                                   WebDataBinderFactory webDataBinderFactory) throws Exception {
         HttpServletRequest request = (HttpServletRequest) nativeWebRequest.getNativeRequest();
-
-        return null;
+        User user = new User();
+        user.setUserCode("code");
+        user.setUsername("name");
+        user.setSex(Sex.MALE.getSex());
+        return user;
     }
 }

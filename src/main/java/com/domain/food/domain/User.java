@@ -1,5 +1,6 @@
 package com.domain.food.domain;
 
+import com.domain.food.consts.Sex;
 import lombok.*;
 
 /**
@@ -26,6 +27,6 @@ public class User {
     /**
      * 性别
      */
-    private Sex sex;
+    private int sex;
 
 }
