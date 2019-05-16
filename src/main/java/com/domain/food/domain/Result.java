@@ -13,13 +13,15 @@ import lombok.Getter;
 public class Result<T> {
 
     private int code;
-    private String msg;
     private T data;
+    private String msg;
+    private String[] ext;
 
-    private Result(int code, String msg, T data) {
+    private Result(int code, String msg, T data, String... ext) {
         this.code = code;
         this.msg = msg;
         this.data = data;
+        this.ext = ext;
     }
 
 
@@ -35,8 +37,8 @@ public class Result<T> {
         return success(ErrorCode.OK, data);
     }
 
-    public static <T> Result<T> success(ErrorCode errorCode, T data) {
-        return new Result<>(errorCode.getCode(), errorCode.getMsg(), data);
+    public static <T> Result<T> success(ErrorCode errorCode, T data, String... ext) {
+        return new Result<>(errorCode.getCode(), errorCode.getMsg(), data, ext);
     }
 
 }

@@ -68,6 +68,26 @@ public class IoUtil {
     }
 
     /**
+     * 重命名文件
+     */
+    public static void rename(String oldFilepath, String newFilepath) {
+        File oldFile = new File(oldFilepath);
+        File newFile = new File(newFilepath);
+        try {
+            if (!oldFile.exists()) {
+                throw new IllegalArgumentException("原文件必须存在");
+            }
+            if (!newFile.exists()) {
+                newFile.mkdirs();
+                newFile.createNewFile();
+            }
+            oldFile.renameTo(newFile);
+        } catch (IOException e) {
+            throw ExceptionUtil.unchecked(e);
+        }
+    }
+
+    /**
      * 关闭流
      */
     public static void close(Closeable closeable) {

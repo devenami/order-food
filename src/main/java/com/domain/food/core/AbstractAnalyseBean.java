@@ -1,4 +1,4 @@
-package com.domain.food.dao.core;
+package com.domain.food.core;
 
 import com.domain.food.utils.ObjectUtil;
 import org.springframework.util.Assert;
@@ -14,12 +14,12 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * 抽象的实体分析类
  *
- * @param K 主键类型
- * @param E 实体类型
+ * @param <K> 主键类型
+ * @param <E> 实体类型
  * @author zhoutaotao
  * @date 2019/5/16
  */
-public abstract class AbstractAnalyseDao<K, E> extends AbstractContainer<K, E> {
+public abstract class AbstractAnalyseBean<K, E> extends AbstractContainer<K, E> {
 
     // id 和 实体的数据类型
     private EntityHolder<K, E> entityHolder = new EntityHolder<>();
@@ -34,20 +34,22 @@ public abstract class AbstractAnalyseDao<K, E> extends AbstractContainer<K, E> {
         Entity entityAnnotation = entityClass.getDeclaredAnnotation(Entity.class);
         Assert.notNull(entityAnnotation, "数据实体必须使用 [" + Entity.class.getName() + "]");
         String persistFileName = entityAnnotation.name();
-        Assert.isTrue(!fileNameSet.containsKey(persistFileName), "存在相同的实体名 [" + persistFileName + "]");
-        fileNameSet.put(persistFileName, EMPTY_OBJECT);
+        Assert.isTrue(!existsFileName.containsKey(persistFileName), "存在相同的实体名 [" + persistFileName + "]");
+        existsFileName.put(persistFileName, EMPTY_OBJECT);
+        log.debug("获取到 [" + entityClass.getName() + "] 中配置的文件名[" + persistFileName + "]");
 
         getEntityHolder().setEntityAnnotation(entityAnnotation);
 
         // 处理主键
         Field[] declaredFields = entityClass.getDeclaredFields();
         Assert.notEmpty(declaredFields, "实体内部必须存在属性");
+        log.debug("[" + entityClass.getName() + "]中存在的属性数量[" + declaredFields.length + "]");
 
         Id idAnnotation = null;
         Field idField = null;
         for (Field field : declaredFields) {
             Id fieldId = field.getDeclaredAnnotation(Id.class);
-            if (field != null && idAnnotation != null) {
+            if (fieldId != null && idAnnotation != null) {
                 throw new IllegalStateException("实体 [" + entityClass.getName() + "] 存在多个 [" + Id.class.getName() + "]");
             } else if (fieldId != null && idAnnotation == null) {
                 idAnnotation = fieldId;
@@ -57,13 +59,13 @@ public abstract class AbstractAnalyseDao<K, E> extends AbstractContainer<K, E> {
             getEntityHolder().addField(field.getName(), field);
         }
 
-        if (!ObjectUtil.isNull(idAnnotation) && !ObjectUtil.isNull(idField)) {
-            getEntityHolder().setIdExists(true);
-            Class<K> idClass = getIdClass();
-            Assert.isTrue(idClass == idField.getType(),
-                    getClass().getName() + "中声明的id类型为: [" + idClass.getName()
-                            + "], 而实体[" + entityClass.getName() + "]中的id类型为: [" + idField.getType().getName() + "]");
-        }
+        Assert.isTrue(!ObjectUtil.isNull(idAnnotation) && !ObjectUtil.isNull(idField),
+                "[" + entityClass.getName() + "] 中缺少Id");
+
+        Class<K> idClass = getIdClass();
+        Assert.isTrue(idClass == idField.getType(),
+                getClass().getName() + "中声明的id类型为: [" + idClass.getName()
+                        + "], 而实体[" + entityClass.getName() + "]中的id类型为: [" + idField.getType().getName() + "]");
     }
 
     @Override

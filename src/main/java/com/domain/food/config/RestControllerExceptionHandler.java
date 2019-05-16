@@ -51,7 +51,7 @@ public class RestControllerExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     @ExceptionHandler(BusinessException.class)
     public Result<Object> handleBusinessException(BusinessException e) {
-        return Result.success(e.getErrorCode());
+        return Result.success(e.getErrorCode(), null, e.getExt());
     }
 
 }

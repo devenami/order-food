@@ -33,4 +33,13 @@ public class User {
      */
     private int sex;
 
+    /**
+     * 部门
+     */
+    private String department;
+
+    /**
+     * 创建时间
+     */
+    private long save;
 }

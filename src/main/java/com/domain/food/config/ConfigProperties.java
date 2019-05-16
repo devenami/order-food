@@ -36,7 +36,12 @@ public class ConfigProperties {
         /**
          * 数据持久化时间
          */
-        private int interval = 10;
+        private int interval = 1;
+
+        /**
+         * 缓存过期时间
+         */
+        private int expireTime = 5;
 
         /**
          * 数据持久化路径

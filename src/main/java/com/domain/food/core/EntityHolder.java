@@ -1,4 +1,4 @@
-package com.domain.food.dao.core;
+package com.domain.food.core;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 实体属性容器
  *
- * @param K 主键类型
- * @param E 实体类型
+ * @param <K>主键类型
+ * @param <E> 实体类型
  * @author zhoutaotao
  * @date 2019/5/16
  */
@@ -25,8 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @EqualsAndHashCode
 @NoArgsConstructor
 public class EntityHolder<K, E> {
-
-    private boolean idExists;
 
     private Field idField;
 
