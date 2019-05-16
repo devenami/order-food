@@ -1,5 +1,6 @@
 package com.domain.food.config;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,6 +24,36 @@ public class ConfigProperties {
 
     @NestedConfigurationProperty
     private Web web = new Web();
+
+    @NestedConfigurationProperty
+    private DB db = new DB();
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @EqualsAndHashCode
+    public class DB {
+        /**
+         * 数据持久化时间
+         */
+        private int interval = 10;
+
+        /**
+         * 数据持久化路径
+         */
+        private String path = "classpath:/db";
+
+        public String getFilePath(String file) {
+            if (path.startsWith("classpath:")) {
+                String relPath = path.substring(10);
+                String classloaderPath = getClass().getClassLoader().getResource("").getPath();
+                path = relPath.startsWith("/") ? classloaderPath + relPath.substring(1) : classloaderPath + relPath;
+                file = file.startsWith("/") ? path + file.substring(1) : path + file;
+            }
+            return file;
+        }
+
+    }
 
     @Setter
     @Getter

@@ -1,11 +1,11 @@
 package com.domain.food.utils;
 
 import com.domain.food.consts.Constant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.awt.geom.IllegalPathStateException;
+import java.io.*;
 
 /**
  * 输入输出工具类
@@ -14,6 +14,8 @@ import java.io.InputStreamReader;
  * @date 2019/5/15
  */
 public class IoUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(IoUtil.class);
 
     /**
      * 从文件中读取字符串
@@ -31,6 +33,51 @@ public class IoUtil {
             throw ExceptionUtil.unchecked(e);
         }
         return result.toString();
+    }
+
+    /**
+     * 创建新文件
+     */
+    public static void createFile(String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdirs();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException("创建文件失败");
+            }
+        }
+    }
+
+    /**
+     * 删除文件
+     */
+    public static void delete(String path) {
+        int counter = 1;
+        int maxTry = 10;
+        File file = new File(path);
+        if (file.exists()) {
+            while (!file.delete()) {
+                log.error("删除文件 [" + path + "]失败, 第" + ++counter + "次重试。");
+                if (counter > maxTry) {
+                    throw new IllegalPathStateException("删除[" + path + "]重试多次后仍失败。");
+                }
+            }
+        }
+    }
+
+    /**
+     * 关闭流
+     */
+    public static void close(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }

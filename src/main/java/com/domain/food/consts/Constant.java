@@ -13,4 +13,8 @@ public class Constant {
     public static final String DEFAULT_TEXT_ERROR = "error";
 
     public static final String DEFAULT_TEXT_UNKNOWN = "known";
+
+    public static final String DEFAULT_LINE_CENTER = "-";
+
+    public static final String DEFAULT_SUFFIX_JSON = ".json";
 }

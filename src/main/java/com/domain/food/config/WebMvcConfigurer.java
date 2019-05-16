@@ -18,7 +18,6 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-
     }
 
     @Override
