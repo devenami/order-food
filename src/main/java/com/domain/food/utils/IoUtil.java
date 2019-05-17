@@ -41,8 +41,11 @@ public class IoUtil {
     public static void createFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
-            file.mkdirs();
             try {
+                File parentFile = file.getParentFile();
+                if (!parentFile.exists()) {
+                    parentFile.mkdirs();
+                }
                 file.createNewFile();
             } catch (IOException e) {
                 throw new RuntimeException("创建文件失败");

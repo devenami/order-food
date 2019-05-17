@@ -53,7 +53,13 @@ public class ConfigProperties {
                 String relPath = path.substring(10);
                 String classloaderPath = getClass().getClassLoader().getResource("").getPath();
                 path = relPath.startsWith("/") ? classloaderPath + relPath.substring(1) : classloaderPath + relPath;
-                file = file.startsWith("/") ? path + file.substring(1) : path + file;
+            }
+            if (path.endsWith("/") && file.startsWith("/")) {
+                file = path + file.substring(1);
+            } else if (path.endsWith("/") || file.startsWith("/")) {
+                file = path + file;
+            } else {
+                file = path + "/" + file;
             }
             return file;
         }

@@ -1,6 +1,9 @@
-package com.domain.food.core;
+package com.domain.food.core.helper;
 
 import com.domain.food.utils.ObjectUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
 import javax.persistence.Entity;
@@ -8,6 +11,8 @@ import javax.persistence.Id;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -19,16 +24,26 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author zhoutaotao
  * @date 2019/5/16
  */
-public abstract class AbstractAnalyseBean<K, E> extends AbstractContainer<K, E> {
+public abstract class EntityBeanAnalyser<K, E> implements InitializingBean {
+
+    protected Logger log = LoggerFactory.getLogger(getClass());
 
     // id 和 实体的数据类型
     private EntityHolder<K, E> entityHolder = new EntityHolder<>();
 
+    // 用于存储所有持久化的文件名
+    protected static Object EMPTY_OBJECT = new Object();
+    protected static Map<String, Object> existsFileName = new ConcurrentHashMap<>();
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        analyse();
+    }
+
     /**
      * 分析实体
      */
-    @Override
-    protected synchronized void analyseEntity() {
+    protected synchronized void analyse() {
         Class<E> entityClass = getEntityClass();
         // 检查数据持久化名称
         Entity entityAnnotation = entityClass.getDeclaredAnnotation(Entity.class);
@@ -66,9 +81,13 @@ public abstract class AbstractAnalyseBean<K, E> extends AbstractContainer<K, E> 
         Assert.isTrue(idClass == idField.getType(),
                 getClass().getName() + "中声明的id类型为: [" + idClass.getName()
                         + "], 而实体[" + entityClass.getName() + "]中的id类型为: [" + idField.getType().getName() + "]");
+        getEntityHolder().setIdField(idField);
+        getEntityHolder().setIdAnnotation(idAnnotation);
     }
 
-    @Override
+    /**
+     * 获取id类型
+     */
     @SuppressWarnings("unchecked")
     public Class<K> getIdClass() {
         if (!ObjectUtil.isNull(getEntityHolder().getIdClazz())) {
@@ -97,7 +116,9 @@ public abstract class AbstractAnalyseBean<K, E> extends AbstractContainer<K, E> 
         return id;
     }
 
-    @Override
+    /**
+     * 获取实体类型
+     */
     @SuppressWarnings("unchecked")
     public Class<E> getEntityClass() {
         if (!ObjectUtil.isNull(getEntityHolder().getEntityClazz())) {
@@ -129,7 +150,6 @@ public abstract class AbstractAnalyseBean<K, E> extends AbstractContainer<K, E> 
     /**
      * 获取实体管理器
      */
-    @Override
     public EntityHolder<K, E> getEntityHolder() {
         return entityHolder;
     }

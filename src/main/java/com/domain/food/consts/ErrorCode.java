@@ -10,7 +10,7 @@ public enum ErrorCode {
 
     OK(200, "业务执行成功"),
     BAD(500, "服务器错误"),
-    ILLEGAL_ARGUMENTS(600, "参数错误"),
+    ILLEGAL_ARGUMENTS(1000, "参数错误"),
     ;
 
     int code;

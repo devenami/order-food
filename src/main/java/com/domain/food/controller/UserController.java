@@ -23,7 +23,7 @@ public class UserController extends AbstractController {
     private IUserService userService;
 
     @PostMapping("/add")
-    public Result<User> addUser(String username, int sex, String department) {
+    public Result<User> addUser(String username, Integer sex, String department) {
         notBlank(username, "username");
         positiveNumber(sex, "sex");
         notBlank(department, "department");

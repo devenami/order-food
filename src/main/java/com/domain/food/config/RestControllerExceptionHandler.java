@@ -43,7 +43,7 @@ public class RestControllerExceptionHandler {
         if (showStack) {
             e.printStackTrace(response.getWriter());
         } else {
-            Result result = Result.success(ErrorCode.BAD);
+            Result result = Result.success(ErrorCode.BAD, null, e.getMessage());
             response.getWriter().print(JsonUtil.toJson(result));
         }
     }

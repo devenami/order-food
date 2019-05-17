@@ -1,7 +1,7 @@
 package com.domain.food.dao.impl;
 
 import com.domain.food.dao.IUserDao;
-import com.domain.food.core.AbstractBean;
+import com.domain.food.core.AbstractDao;
 import com.domain.food.domain.User;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +12,6 @@ import org.springframework.stereotype.Repository;
  * @date 2019/5/16
  */
 @Repository
-public class UserBean extends AbstractBean<String, User> implements IUserDao {
+public class UserDao extends AbstractDao<String, User> implements IUserDao {
 
 }

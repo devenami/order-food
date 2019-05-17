@@ -1,4 +1,4 @@
-package com.domain.food.core;
+package com.domain.food.core.helper;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

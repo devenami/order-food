@@ -1,12 +1,9 @@
-package com.domain.food.core;
+package com.domain.food.core.helper;
 
 import com.domain.food.config.ConfigProperties;
 import com.domain.food.consts.Constant;
 import com.domain.food.utils.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
@@ -18,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -28,18 +26,15 @@ import java.util.stream.Collectors;
  * @author zhoutaotao
  * @date 2019/5/16
  */
-public abstract class AbstractContainer<K, E> implements Closeable, InitializingBean, ApplicationContextAware {
-
-    protected Logger log = LoggerFactory.getLogger(getClass());
+public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> implements Closeable, ApplicationContextAware {
 
     private ConfigProperties properties;
 
+    // 上次从磁盘加载数据的时间 -- 必须
+    private volatile AtomicLong lastLoadDataFromDiskTime = new AtomicLong(0);
+
     // 任务调度
     protected ScheduledExecutorService executor = null;
-
-    // 用于存储所有持久化的文件名
-    protected static Object EMPTY_OBJECT = new Object();
-    protected static Map<String, Object> existsFileName = new ConcurrentHashMap<>();
 
     // 数据持久化缓存
     private Map<K, EntityWrap<E>> entityCacheMap = new ConcurrentHashMap<>();
@@ -47,32 +42,11 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
     // 实体操作类型分组
     private final Map<EntityWrap.Type, List<E>> entityGroupMap = new ConcurrentHashMap<>();
 
-    /**
-     * 获取实体管理器
-     */
-    protected abstract EntityHolder<K, E> getEntityHolder();
-
-    /**
-     * 解析实体
-     */
-    protected abstract void analyseEntity();
-
-    /**
-     * 获取id类型
-     */
-    protected abstract Class<K> getIdClass();
-
-    /**
-     * 获取实体类型
-     */
-    protected abstract Class<E> getEntityClass();
-
     @Override
     public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
         // 初始化分组集合
         initEntityGroupMap();
-        // 处理实体
-        analyseEntity();
         // 读取已存在的数据，仅读取当天
         loadDataFromDisk();
 
@@ -82,13 +56,13 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
         int interval = properties.getDb().getInterval();
         log.debug("启动定时器, 循环时间：" + interval + "秒/次");
 
-        executor.schedule(() -> {
+        executor.scheduleWithFixedDelay(() -> {
             try {
                 writeDataToDisk();
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
-        }, interval, TimeUnit.MINUTES);
+        }, interval, interval, TimeUnit.MINUTES);
     }
 
     /**
@@ -115,7 +89,13 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
     /**
      * 从磁盘加载指定日期的数据
      */
-    private void loadDataFromDisk() {
+    protected void loadDataFromDisk() {
+        long currentTimeMillis = System.currentTimeMillis();
+        if (currentTimeMillis - lastLoadDataFromDiskTime.get() < properties.getDb().getExpireTime()) {
+            return;
+        }
+        lastLoadDataFromDiskTime.set(currentTimeMillis);
+
         // 加载数据
         String filePathAtDisk = getDiskFilePath();
 
@@ -140,23 +120,20 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
     /**
      * 将处理好的实体添加到map中
      */
-    @SuppressWarnings("unchecked")
-    private void addToEntityCacheMap(E entity) throws IllegalAccessException {
+    private void addToEntityCacheMap(E entity) {
         if (!ObjectUtil.isNull(entity)) {
-            K id = (K) getEntityHolder().getIdField().get(entity);
-            Assert.notNull(id, "主键不能为null");
             EntityWrap<E> entityWrap = new EntityWrap<>();
             entityWrap.setExpireTime(getExpireTime());
             entityWrap.setEntity(entity);
             entityWrap.setType(EntityWrap.Type.DEFAULT);
-            getEntityCacheMap().put(id, entityWrap);
+            getEntityCacheMap().put(getIdValue(entity), entityWrap);
         }
     }
 
     /**
      * 获取缓存的过期时间
      */
-    private long getExpireTime() {
+    protected long getExpireTime() {
         int expireTime = properties.getDb().getExpireTime();
         return System.currentTimeMillis() + expireTime * 60 * 1000;
     }
@@ -197,6 +174,8 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
             EntityWrap.Type type = entityWrap.getType();
             E entity = entityWrap.getEntity();
             entityGroupMap.get(type).add(entity);
+            // 将实体状态置为正常
+            entityWrap.setType(EntityWrap.Type.DEFAULT);
 
             // 处理过期时间
             long expireTime = entityWrap.getExpireTime();
@@ -221,6 +200,9 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
         List<E> update = entityGroupMap.get(EntityWrap.Type.UPDATE);
         List<E> add = entityGroupMap.get(EntityWrap.Type.ADD);
         add.addAll(update);
+        if (add.isEmpty()) {
+            return;
+        }
         String filepath = getDiskFilePath();
         try {
             appendFile(filepath, add);
@@ -247,13 +229,18 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
     private void removeFromDisk() throws IOException {
         List<E> update = entityGroupMap.get(EntityWrap.Type.UPDATE);
         List<E> delete = entityGroupMap.get(EntityWrap.Type.DELETE);
-        delete.addAll(update);
-        copyFile(getDiskFilePath(), delete);
+        if (!update.isEmpty()) {
+            delete.addAll(update);
+        }
+        if (!delete.isEmpty()) {
+            copyFile(getDiskFilePath(), delete);
+        }
     }
 
+    @SuppressWarnings("unchecked")
     private synchronized void copyFile(String filepath, List<E> list) throws IOException {
         Set<K> idSet = list.stream()
-                .map(e -> ReflectUtil.get(getEntityHolder().getIdField(), e, getEntityHolder().getIdClazz()))
+                .map(this::getIdValue)
                 .collect(Collectors.toSet());
         String tmpFile = filepath.concat(".tmp");
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(
@@ -263,7 +250,7 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
             String line;
             while (!StringUtil.isBlank(line = br.readLine())) {
                 E entity = JsonUtil.fromJson(line, getEntityHolder().getEntityClazz());
-                K id = ReflectUtil.get(getEntityHolder().getIdField(), entity, getEntityHolder().getIdClazz());
+                K id = getIdValue(entity);
                 // 写出所有未被删除的记录
                 if (!idSet.contains(id)) {
                     pw.println(line);
@@ -273,6 +260,19 @@ public abstract class AbstractContainer<K, E> implements Closeable, Initializing
         // 删除原文件，并将临时文件替换成原文件
         IoUtil.delete(filepath);
         IoUtil.rename(tmpFile, filepath);
+    }
+
+    /**
+     * 获取id的值
+     *
+     * @param entity
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    protected K getIdValue(E entity) {
+        Object id = ReflectUtil.get(getEntityHolder().getIdField(), entity);
+        Assert.notNull(id, "主键不能为null");
+        return (K) id;
     }
 
     @Override

@@ -23,6 +23,7 @@ public class UserService extends AbstractService implements IUserService {
     public User addUser(String username, int sex, String department) {
         User user = new User();
         // TODO 添加编码生成器
+        user.setUserCode("code");
         user.setUsername(username);
         user.setSex(sex);
         user.setDepartment(department);

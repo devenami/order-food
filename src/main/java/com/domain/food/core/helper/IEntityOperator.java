@@ -1,4 +1,4 @@
-package com.domain.food.core;
+package com.domain.food.core.helper;
 
 /**
  * 实体操作
