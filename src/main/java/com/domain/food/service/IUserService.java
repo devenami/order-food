@@ -13,5 +13,15 @@ public interface IUserService {
     /**
      * 新增用户
      */
-    User addUser(String username, int sex, String department);
+    User addUser(String userCode, String username, int sex, String department);
+
+    /**
+     * 更新用户信息
+     */
+    User updateUser(String userCode, String username, Integer sex, String department);
+
+    /**
+     * 删除用户信息
+     */
+    User deleteUser(String userCode);
 }

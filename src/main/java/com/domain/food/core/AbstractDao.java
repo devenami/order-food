@@ -1,12 +1,21 @@
 package com.domain.food.core;
 
+import com.domain.food.config.MoreThanOneElementException;
 import com.domain.food.core.helper.AbstractContainer;
 import com.domain.food.core.helper.EntityWrap;
 import com.domain.food.core.helper.IEntityOperator;
+import com.domain.food.utils.JsonUtil;
 import com.domain.food.utils.ObjectUtil;
+import com.domain.food.utils.ReflectUtil;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 抽象的 helper
+ * 抽象的 dao
  *
  * @param <K> 主键类型
  * @param <E> 实体类型
@@ -17,14 +26,46 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
 
     @Override
     public E getById(K id) {
-        EntityWrap<E> entityWrap = getEntityCacheMap().get(id);
-        if (ObjectUtil.isNull(entityWrap)) {
-            loadDataFromDisk();
-            entityWrap = getEntityCacheMap().get(id);
-        }
-        return ObjectUtil.isNull(entityWrap) ? null : entityWrap.getEntity();
+        Map<String, Object> map = new HashMap<>();
+        map.put(getEntityHolder().getIdField().getName(), id);
+        return getOne(map);
     }
 
+    @Override
+    public List<E> get(Map<String, Object> map) {
+        final List<E> list = new ArrayList<>();
+        loadData(map);
+        getEntityCacheMap().forEach((id, entityWrap) -> {
+            // 禁止对已删除的数据进行操作
+            EntityWrap.Type type = entityWrap.getType();
+            if (type == EntityWrap.Type.DELETE) {
+                return;
+            }
+
+            E entity = entityWrap.getEntity();
+            // 过滤出所有参数name即参数值匹配的数据
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String name = entry.getKey();
+                Object value = entry.getValue();
+                Field field = getEntityHolder().getField(name);
+                Object realValue = ReflectUtil.get(field, entity);
+                if (!value.equals(realValue)) {
+                    return;
+                }
+            }
+            list.add(entity);
+        });
+        return list;
+    }
+
+    @Override
+    public E getOne(Map<String, Object> map) {
+        List<E> list = get(map);
+        if (list.size() > 1) {
+            throw new MoreThanOneElementException(JsonUtil.toJson(list));
+        }
+        return list.size() == 1 ? list.get(0) : null;
+    }
 
     @Override
     public void save(E entity) {
@@ -38,6 +79,46 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
         entityWrap.setExpireTime(getExpireTime());
         entityWrap.setType(EntityWrap.Type.ADD);
         getEntityCacheMap().put(id, entityWrap);
+    }
+
+    @Override
+    public void update(E entity) {
+        K id = getIdValue(entity);
+        E exists = getById(id);
+        if (ObjectUtil.isNull(exists)) {
+            throw new IllegalArgumentException("实体不存在, id = " + id);
+        }
+        EntityWrap<E> entityWrap = getEntityCacheMap().get(id);
+        entityWrap.setEntity(entity);
+        entityWrap.setType(EntityWrap.Type.UPDATE);
+        entityWrap.setExpireTime(getExpireTime());
+    }
+
+    @Override
+    public void delete(E entity) {
+        delete(entity, false);
+    }
+
+    @Override
+    public void delete(E entity, boolean throwsException) {
+        K id = getIdValue(entity);
+        deleteById(id, throwsException);
+    }
+
+    @Override
+    public void deleteById(K id) {
+        deleteById(id, false);
+    }
+
+    @Override
+    public void deleteById(K id, boolean throwsException) {
+        E exists = getById(id);
+        if (ObjectUtil.isNull(exists) && throwsException) {
+            throw new IllegalArgumentException("实体不存在, id = " + id);
+        } else {
+            EntityWrap<E> entityWrap = getEntityCacheMap().get(id);
+            entityWrap.setType(EntityWrap.Type.DELETE);
+        }
     }
 
 }

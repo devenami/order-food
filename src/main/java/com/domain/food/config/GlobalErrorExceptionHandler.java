@@ -1,15 +1,20 @@
 package com.domain.food.config;
 
 import com.domain.food.consts.Constant;
-import com.domain.food.utils.DateUtil;
-import com.domain.food.utils.IoUtil;
-import com.domain.food.utils.StringUtil;
+import com.domain.food.consts.ErrorCode;
+import com.domain.food.domain.Result;
+import com.domain.food.utils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.util.HtmlUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,14 +31,52 @@ import java.util.Map;
  * @since 2019/5/15 23:11
  */
 @Controller
+@RestControllerAdvice
 @RequestMapping("${server.error.path:${error.path:/error}}")
 public class GlobalErrorExceptionHandler implements ErrorController {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalErrorExceptionHandler.class);
 
     private ConfigProperties properties;
 
     public GlobalErrorExceptionHandler(ConfigProperties properties) {
         this.properties = properties;
     }
+
+
+    /* ------------------------------------------------------------------
+     * -------- 处理业务controller抛出的异常
+     * ------------------------------------------------------------------
+     */
+    @ResponseStatus(HttpStatus.OK)
+    @ExceptionHandler(Exception.class)
+    public void handleUnknownException(Exception e) throws IOException {
+        log.error(e.getMessage(), e);
+        HttpServletResponse response = HttpUtil.getHttpServletResponse();
+        response.setContentType("application/json; charset=" + Constant.DEFAULT_CHARSET);
+        response.setCharacterEncoding(Constant.DEFAULT_CHARSET);
+        boolean showStack = properties.getWeb().isShowStack();
+        if (showStack) {
+            e.printStackTrace(response.getWriter());
+        } else {
+            Result result = Result.success(ErrorCode.BAD, null, e.getMessage());
+            response.getWriter().print(JsonUtil.toJson(result));
+        }
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @ExceptionHandler(BusinessException.class)
+    public Result<Object> handleBusinessException(BusinessException e) {
+        return Result.success(e.getErrorCode(), null, e.getExt());
+    }
+
+
+
+
+    /* ------------------------------------------------------------------
+     * -------- 处理非业务controller抛出的异常
+     * ------------------------------------------------------------------
+     */
 
     /**
      * 用于返回 HTML 页面

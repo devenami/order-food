@@ -4,18 +4,21 @@ import com.domain.food.config.ConfigProperties;
 import com.domain.food.consts.Constant;
 import com.domain.food.utils.*;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -26,12 +29,10 @@ import java.util.stream.Collectors;
  * @author zhoutaotao
  * @date 2019/5/16
  */
-public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> implements Closeable, ApplicationContextAware {
+public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
+        implements IDaoClear, ApplicationContextAware, DisposableBean {
 
     private ConfigProperties properties;
-
-    // 上次从磁盘加载数据的时间 -- 必须
-    private volatile AtomicLong lastLoadDataFromDiskTime = new AtomicLong(0);
 
     // 任务调度
     protected ScheduledExecutorService executor = null;
@@ -42,13 +43,31 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
     // 实体操作类型分组
     private final Map<EntityWrap.Type, List<E>> entityGroupMap = new ConcurrentHashMap<>();
 
+    // 所有查询过的参数缓存
+    private final Set<Map<String, Object>> queryParamSet = Collections.synchronizedSet(new HashSet<>());
+
+    // id与查询参数的对应关系
+    private final Map<K, List<Map<String, Object>>> keyToQueryParamMap = new ConcurrentHashMap<>();
+
+    /**
+     * 添加到查询参数缓存
+     *
+     * @param map 查询参数
+     * @return true:插入成功，第一次使用该参数查询
+     */
+    private boolean addToQueryParamSet(Map<String, Object> map) {
+        if (queryParamSet.contains(map)) {
+            return false;
+        }
+        queryParamSet.add(map);
+        return true;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         // 初始化分组集合
         initEntityGroupMap();
-        // 读取已存在的数据，仅读取当天
-        loadDataFromDisk();
 
         // 启动定时器，定时刷库
         executor = Executors.newScheduledThreadPool(1);
@@ -87,14 +106,51 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
     }
 
     /**
-     * 从磁盘加载指定日期的数据
+     * 从磁盘加载数据
+     *
+     * @param map 查询参数
      */
-    protected void loadDataFromDisk() {
-        long currentTimeMillis = System.currentTimeMillis();
-        if (currentTimeMillis - lastLoadDataFromDiskTime.get() < properties.getDb().getExpireTime()) {
+    protected void loadData(Map<String, Object> map) {
+        // 拷贝 map 中的键值对
+        Map<String, Object> tmpMap = CollectionUtil.copy(map);
+
+        // 禁止全局数据加载，只加载可用的数据
+        if (ObjectUtil.isNull(tmpMap) || tmpMap.isEmpty()) {
             return;
         }
-        lastLoadDataFromDiskTime.set(currentTimeMillis);
+
+        // 已经使用过该参数查询
+        if (!addToQueryParamSet(tmpMap)) {
+            return;
+        }
+
+        // 声明锁对象
+        Lock lock = new ReentrantLock();
+        try {
+            lock.lock();
+            // 真正的从磁盘加载数据
+            loadDataFromDisk(tmpMap);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 从磁盘加载数据, 方法体内并为对数据进行同步操作
+     * 使用方式
+     * <code>
+     * // 声明锁对象
+     * Lock lock = new ReentrantLock();
+     * try {
+     * lock.lock();
+     * // 真正的从磁盘加载数据
+     * loadDataFromDisk(tmpMap);
+     * } finally {
+     * lock.unlock();
+     * }
+     * </code>
+     */
+    private void loadDataFromDisk(Map<String, Object> map) {
 
         // 加载数据
         String filePathAtDisk = getDiskFilePath();
@@ -107,7 +163,17 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
             String line;
             while (!StringUtil.isBlank(line = br.readLine())) {
                 E entity = convertStringToEntity(line);
-                addToEntityCacheMap(entity);
+                if (!ObjectUtil.isNull(entity) && computeFieldValue(entity, map)) {
+                    addToEntityCacheMap(entity);
+                    // 添加主键和查询参数的对应关系
+                    K id = getIdValue(entity);
+                    List<Map<String, Object>> mapList = keyToQueryParamMap.get(id);
+                    if (ObjectUtil.isNull(mapList)) {
+                        mapList = new ArrayList<>();
+                        keyToQueryParamMap.put(id, mapList);
+                    }
+                    mapList.add(map);
+                }
             }
         } catch (FileNotFoundException ignore) {
         } catch (Exception e) {
@@ -118,16 +184,34 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
     }
 
     /**
+     * 对比请求的属性是否完全相同
+     *
+     * @param entity 实体
+     * @param map    属性名和属性值的对应关系
+     * @return true: 所有指定的属性名和属性值，与磁盘上的文件一直
+     */
+    private boolean computeFieldValue(E entity, Map<String, Object> map) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+            Field field = getEntityHolder().getField(name);
+            Object realValue = ReflectUtil.get(field, entity);
+            if (!value.equals(realValue)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * 将处理好的实体添加到map中
      */
     private void addToEntityCacheMap(E entity) {
-        if (!ObjectUtil.isNull(entity)) {
-            EntityWrap<E> entityWrap = new EntityWrap<>();
-            entityWrap.setExpireTime(getExpireTime());
-            entityWrap.setEntity(entity);
-            entityWrap.setType(EntityWrap.Type.DEFAULT);
-            getEntityCacheMap().put(getIdValue(entity), entityWrap);
-        }
+        EntityWrap<E> entityWrap = new EntityWrap<>();
+        entityWrap.setExpireTime(getExpireTime());
+        entityWrap.setEntity(entity);
+        entityWrap.setType(EntityWrap.Type.DEFAULT);
+        getEntityCacheMap().put(getIdValue(entity), entityWrap);
     }
 
     /**
@@ -217,9 +301,28 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
      * 将处理好的实体列表，写出到磁盘
      */
     private synchronized void appendFile(String file, List<E> list) throws FileNotFoundException {
+
+        log.debug("添加数据到文件: [" + file + "]");
+
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(
                 new FileOutputStream(file, true), Charset.forName(Constant.DEFAULT_CHARSET)))) {
-            list.forEach(e -> pw.println(JsonUtil.toJson(e)));
+            list.forEach(e -> {
+                removeFromQueryParamSet(e);
+                pw.println(JsonUtil.toJson(e));
+            });
+        }
+    }
+
+    /**
+     * 从查询参数缓存中移除对应的id
+     */
+    private void removeFromQueryParamSet(E e) {
+        // 清楚实体对应的查询查询缓存
+        K id = getIdValue(e);
+        List<Map<String, Object>> mapList = keyToQueryParamMap.get(id);
+
+        if (!ObjectUtil.isNull(mapList)) {
+            mapList.forEach(queryParamSet::remove);
         }
     }
 
@@ -237,8 +340,10 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
         }
     }
 
-    @SuppressWarnings("unchecked")
     private synchronized void copyFile(String filepath, List<E> list) throws IOException {
+
+        log.debug("拷贝数据到文件: [" + filepath + "]");
+
         Set<K> idSet = list.stream()
                 .map(this::getIdValue)
                 .collect(Collectors.toSet());
@@ -254,19 +359,20 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
                 // 写出所有未被删除的记录
                 if (!idSet.contains(id)) {
                     pw.println(line);
+                } else {
+                    // 移除查询缓存
+                    removeFromQueryParamSet(entity);
                 }
             }
         }
         // 删除原文件，并将临时文件替换成原文件
         IoUtil.delete(filepath);
         IoUtil.rename(tmpFile, filepath);
+        IoUtil.delete(tmpFile);
     }
 
     /**
      * 获取id的值
-     *
-     * @param entity
-     * @return
      */
     @SuppressWarnings("unchecked")
     protected K getIdValue(E entity) {
@@ -276,15 +382,20 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E> i
     }
 
     @Override
-    public void close() throws IOException {
+    public void destroy() throws Exception {
+        clear();
+        // 停止线程池
+        executor.shutdownNow();
+    }
 
+    @Override
+    public void clear() throws Exception {
         log.debug("开始持久化数据,将内存数据写入磁盘……");
 
         writeDataToDisk();
 
         log.debug("内存数据持久化成功, 清空缓存……");
         entityCacheMap.clear();
-        executor.shutdownNow();
     }
 
     @Override

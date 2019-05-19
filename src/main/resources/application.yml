@@ -1,3 +1,13 @@
+# 日志配置
 logging:
   level:
-    debug: com
+    root: info
+
+# 业务数据配置
+business:
+  web:
+    showStack: false
+  db:
+    interval: 1
+    expireTime: 5
+    path: classpath:/db

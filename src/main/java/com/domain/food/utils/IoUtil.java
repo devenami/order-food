@@ -81,7 +81,10 @@ public class IoUtil {
                 throw new IllegalArgumentException("原文件必须存在");
             }
             if (!newFile.exists()) {
-                newFile.mkdirs();
+                File parentFile = newFile.getParentFile();
+                if (!parentFile.exists()) {
+                    newFile.mkdirs();
+                }
                 newFile.createNewFile();
             }
             oldFile.renameTo(newFile);
