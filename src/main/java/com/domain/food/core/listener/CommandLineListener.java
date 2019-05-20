@@ -67,8 +67,11 @@ public class CommandLineListener implements Runnable, DisposableBean, Applicatio
                     runners = new ArrayList<>();
                     commandRunner.put(command, runners);
                 }
-                runners.add(next);
-                runners.sort(Comparator.comparingInt(Ordered::getOrder));
+                // 执行去重
+                if (!runners.contains(next)) {
+                    runners.add(next);
+                    runners.sort(Comparator.comparingInt(Ordered::getOrder));
+                }
             });
         }
     }
