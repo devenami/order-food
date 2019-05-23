@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2019/5/16 21:35
  */
 @RestController
-@RequestMapping(value = "/food/user")
+@RequestMapping(value = "/user")
 public class UserController extends AbstractController {
 
     @Autowired
