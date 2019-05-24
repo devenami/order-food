@@ -29,9 +29,13 @@ public class User {
      */
     private String username;
     /**
+     * 用户密码
+     */
+    private String password;
+    /**
      * 性别
      */
-    private int sex;
+    private Integer sex;
 
     /**
      * 部门
@@ -41,5 +45,5 @@ public class User {
     /**
      * 创建时间
      */
-    private long save;
+    private Long save;
 }

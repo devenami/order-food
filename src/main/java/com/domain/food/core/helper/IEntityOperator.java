@@ -21,7 +21,7 @@ public interface IEntityOperator<K, E> {
      * 根据 name -> value 的对应关系获取实体
      *
      * @param map name -> value
-     * @return entity
+     * @return vo
      */
     List<E> get(Map<String, Object> map);
 
@@ -29,7 +29,7 @@ public interface IEntityOperator<K, E> {
      * 根据 name -> value 的对应关系获取实体
      *
      * @param map name -> value
-     * @return entity, 如果存在多个则抛出异常
+     * @return vo, 如果存在多个则抛出异常
      */
     E getOne(Map<String, Object> map);
 

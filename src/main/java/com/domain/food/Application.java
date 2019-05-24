@@ -5,7 +5,7 @@ import com.domain.food.core.listener.ApplicationExitCommandProcessor;
 import com.domain.food.core.listener.CommandLineListener;
 import com.domain.food.core.listener.DaoCommandProcessor;
 import com.domain.food.core.listener.ICommandLineProcessor;
-import com.domain.food.utils.HttpUtil;
+import com.domain.food.vo.UserVO;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,21 +13,16 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
 @EnableSwagger2
-@RestController
 @SpringBootApplication
 @EnableConfigurationProperties(ConfigProperties.class)
 public class Application implements ApplicationContextAware {
@@ -39,19 +34,23 @@ public class Application implements ApplicationContextAware {
         SpringApplication.run(Application.class, args);
     }
 
-    @GetMapping("/")
-    public void index() throws ServletException, IOException {
-        HttpServletRequest request = HttpUtil.getHttpServletRequest();
-        HttpServletResponse response = HttpUtil.getHttpServletResponse();
-        request.getRequestDispatcher("/index.html").forward(request, response);
-    }
-
     @Bean
     public Docket swaggerConfig() {
         return new Docket(DocumentationType.SWAGGER_2)
+                .ignoredParameterTypes(UserVO.class)
+                .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.any())
+                .apis(RequestHandlerSelectors.basePackage("com.domain.food.frontend"))
                 .paths(PathSelectors.any())
+                .build();
+    }
+
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("轻量化点餐系统")
+                .contact(new Contact("feb13th", "https://github.com/feb13th", "zttmax@126.com"))
+                .description("极致轻量化")
+                .version("1.0.0")
                 .build();
     }
 

@@ -30,10 +30,10 @@ public class AbstractController {
     }
 
     /**
-     * 参数必须是正数，为 > 0 的数
+     * 参数必须是正数，为 >= 0 的数
      */
-    protected void positiveNumber(Number number, String... ext) {
-        if (number.intValue() <= 0) {
+    protected void greatEqual0(Number number, String... ext) {
+        if (number.intValue() < 0) {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENTS, ext);
         }
     }

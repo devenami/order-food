@@ -1,14 +1,12 @@
 package com.domain.food.config;
 
-import com.domain.food.consts.Sex;
-import com.domain.food.domain.User;
+import com.domain.food.utils.SessionUtil;
+import com.domain.food.vo.UserVO;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * 用户参数自动注入
@@ -20,7 +18,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter methodParameter) {
-        return methodParameter.getParameterType() == User.class;
+        return methodParameter.getParameterType() == UserVO.class;
     }
 
     @Override
@@ -28,11 +26,6 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
                                   ModelAndViewContainer modelAndViewContainer,
                                   NativeWebRequest nativeWebRequest,
                                   WebDataBinderFactory webDataBinderFactory) throws Exception {
-        HttpServletRequest request = (HttpServletRequest) nativeWebRequest.getNativeRequest();
-        User user = new User();
-        user.setUserCode("code");
-        user.setUsername("name");
-        user.setSex(Sex.MALE.getSex());
-        return user;
+        return SessionUtil.getUser();
     }
 }

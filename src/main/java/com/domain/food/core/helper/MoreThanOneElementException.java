@@ -1,4 +1,4 @@
-package com.domain.food.config;
+package com.domain.food.core.helper;
 
 /**
  * 数据多于一个抛出该异常

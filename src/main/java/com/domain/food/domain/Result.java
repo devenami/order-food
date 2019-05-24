@@ -26,7 +26,7 @@ public class Result<T> {
 
 
     public static Result<Object> success() {
-        return success(null);
+        return success(ErrorCode.OK);
     }
 
     public static <T> Result<T> success(ErrorCode errorCode) {

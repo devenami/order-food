@@ -10,4 +10,4 @@ business:
   db:
     interval: 1
     expireTime: 5
-    path: classpath:/db
+    path: c:/db

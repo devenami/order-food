@@ -11,12 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.HtmlUtils;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,7 +30,6 @@ import java.util.Map;
  */
 @Controller
 @RestControllerAdvice
-@RequestMapping("${server.error.path:${error.path:/error}}")
 public class GlobalErrorExceptionHandler implements ErrorController {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalErrorExceptionHandler.class);
@@ -78,10 +75,17 @@ public class GlobalErrorExceptionHandler implements ErrorController {
      * ------------------------------------------------------------------
      */
 
+    @GetMapping("/")
+    public void index() throws ServletException, IOException {
+        HttpServletRequest request = HttpUtil.getHttpServletRequest();
+        HttpServletResponse response = HttpUtil.getHttpServletResponse();
+        request.getRequestDispatcher("/index.html").forward(request, response);
+    }
+
     /**
      * 用于返回 HTML 页面
      */
-    @RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
+    @RequestMapping(value = "${server.shutdown.path:${shutdown.path:/shutdown}}", produces = MediaType.TEXT_HTML_VALUE)
     public void errorHtml(HttpServletRequest request,
                           HttpServletResponse response) throws IOException {
         response.setContentType("text/html; charset=" + Constant.DEFAULT_CHARSET);
@@ -115,7 +119,7 @@ public class GlobalErrorExceptionHandler implements ErrorController {
         return (input != null) ? HtmlUtils.htmlEscape(input.toString()) : null;
     }
 
-    @RequestMapping
+    @RequestMapping(value = "${server.shutdown.path:${shutdown.path:/shutdown}}")
     public ResponseEntity<Map<String, Object>> error(HttpServletRequest request) {
         HttpStatus status = getStatus(request);
         Map<String, Object> body = new HashMap<>();
@@ -126,7 +130,7 @@ public class GlobalErrorExceptionHandler implements ErrorController {
 
     protected HttpStatus getStatus(HttpServletRequest request) {
         Integer statusCode = (Integer) request
-                .getAttribute("javax.servlet.error.status_code");
+                .getAttribute("javax.servlet.shutdown.status_code");
         if (statusCode == null) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }

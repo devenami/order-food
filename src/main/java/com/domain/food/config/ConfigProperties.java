@@ -23,16 +23,15 @@ import java.util.Map;
 public class ConfigProperties {
 
     @NestedConfigurationProperty
-    private Web web = new Web();
+    private final Web web = new Web();
 
     @NestedConfigurationProperty
-    private DB db = new DB();
+    private final DB db = new DB();
 
     @Getter
     @Setter
     @NoArgsConstructor
-    @EqualsAndHashCode
-    public class DB {
+    public static class DB {
         /**
          * 数据持久化时间
          */
@@ -69,7 +68,7 @@ public class ConfigProperties {
     @Setter
     @Getter
     @NoArgsConstructor
-    public class Web {
+    public static class Web {
 
         /**
          * 是否打印堆栈信息， 开发环境可以开启
@@ -78,7 +77,7 @@ public class ConfigProperties {
 
         /**
          * 错误码和错误页面地址的对应关系
-         * 404 -> classpath:/error/404.html
+         * 404 -> classpath:/shutdown/404.html
          * 500 -> http://www.domain.com/error.html
          */
         private Map<Integer, String> errorPath = new HashMap<>();

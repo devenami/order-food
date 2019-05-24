@@ -1,9 +1,9 @@
-package com.domain.food.controller;
+package com.domain.food.frontend.controller;
 
 import com.domain.food.core.AbstractController;
 import com.domain.food.domain.Result;
-import com.domain.food.domain.User;
-import com.domain.food.service.IUserService;
+import com.domain.food.frontend.service.IUserService;
+import com.domain.food.vo.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,27 +24,25 @@ public class UserController extends AbstractController {
     private IUserService userService;
 
     @PostMapping("/add")
-    public Result<User> addUser(String userCode, String username, Integer sex, String department) {
+    public Result<UserVO> addUser(String userCode, String password, String username, Integer sex, String department) {
         notBlank(userCode, "userCode");
+        notBlank(password, "password");
         notBlank(username, "username");
-        positiveNumber(sex, "sex");
+        greatEqual0(sex, "sex");
         notBlank(department, "department");
 
-        return Result.success(userService.addUser(userCode, username, sex, department));
+        return Result.success(userService.addUser(userCode, password, username, sex, department));
     }
 
     @PostMapping("/update")
-    public Result<User> updateUser(String userCode, String username, Integer sex, String department) {
+    public Result<UserVO> updateUser(String userCode, String password, String username, Integer sex, String department) {
         notBlank(userCode, "userCode");
-        notBlank(username, "username");
-        positiveNumber(sex, "sex");
-        notBlank(department, "department");
 
-        return Result.success(userService.updateUser(userCode, username, sex, department));
+        return Result.success(userService.updateUser(userCode, password, username, sex, department));
     }
 
     @GetMapping("/delete")
-    public Result<User> deleteUser(String userCode) {
+    public Result<UserVO> deleteUser(String userCode) {
         notBlank(userCode, "userCode");
         return Result.success(userService.deleteUser(userCode));
     }

@@ -1,6 +1,6 @@
 package com.domain.food.core;
 
-import com.domain.food.config.MoreThanOneElementException;
+import com.domain.food.core.helper.MoreThanOneElementException;
 import com.domain.food.core.helper.AbstractContainer;
 import com.domain.food.core.helper.EntityWrap;
 import com.domain.food.core.helper.IEntityOperator;
