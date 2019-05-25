@@ -3,6 +3,7 @@ package com.domain.food.core.helper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * 实体包装类
@@ -13,6 +14,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @EqualsAndHashCode
 public class EntityWrap<E> {
 

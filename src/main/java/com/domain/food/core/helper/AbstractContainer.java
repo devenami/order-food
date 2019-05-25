@@ -73,7 +73,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         executor = Executors.newScheduledThreadPool(1);
 
         int interval = properties.getDb().getInterval();
-        log.debug("启动定时器, 循环时间：" + interval + "秒/次");
+        if (log.isDebugEnabled()) {
+            log.debug("启动定时器, 循环时间：{}分/次", interval);
+        }
 
         executor.scheduleWithFixedDelay(() -> {
             try {
@@ -88,7 +90,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      * 初始化分组集合
      */
     private synchronized void initEntityGroupMap() {
-        log.debug("正在初始化分组集合");
+        if (log.isDebugEnabled()) {
+            log.debug("正在初始化分组集合");
+        }
         entityGroupMap.put(EntityWrap.Type.DEFAULT, Collections.synchronizedList(new ArrayList<>()));
         entityGroupMap.put(EntityWrap.Type.ADD, Collections.synchronizedList(new ArrayList<>()));
         entityGroupMap.put(EntityWrap.Type.UPDATE, Collections.synchronizedList(new ArrayList<>()));
@@ -99,6 +103,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      * 重置分组集合
      */
     private synchronized void resetEntityGroupMap() {
+        if (log.isDebugEnabled()) {
+            log.debug("重置分组集合");
+        }
         entityGroupMap.get(EntityWrap.Type.DEFAULT).clear();
         entityGroupMap.get(EntityWrap.Type.ADD).clear();
         entityGroupMap.get(EntityWrap.Type.UPDATE).clear();
@@ -114,8 +121,15 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         // 拷贝 map 中的键值对
         Map<String, Object> tmpMap = CollectionUtil.copy(map);
 
+        if (log.isDebugEnabled()) {
+            log.debug("开始从磁盘加载数据：{}", map);
+        }
+
         // 已经使用过该参数查询
         if (!addToQueryParamSet(tmpMap)) {
+            if (log.isDebugEnabled()) {
+                log.debug("从磁盘加载数据被禁止：{}", map);
+            }
             return;
         }
 
@@ -150,7 +164,10 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         // 加载数据
         String filePathAtDisk = getDiskFilePath();
 
-        log.debug("获取文件数据, [path : " + filePathAtDisk + "]");
+        if (log.isDebugEnabled()) {
+            log.debug("获取文件数据, [path : {}]", filePathAtDisk);
+            log.debug("当前缓存对象状态集合:{}", getEntityCacheMap().toString());
+        }
 
         BufferedReader br = null;
         try {
@@ -248,7 +265,11 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      * 将数据写出到磁盘
      */
     protected void writeDataToDisk() throws IOException {
-        log.debug("写出数据到磁盘……");
+
+        if (log.isDebugEnabled()) {
+            log.debug("{} - 写出数据到磁盘……", getClass());
+            log.debug("当前缓存对象状态集合:{}", getEntityCacheMap().toString());
+        }
 
         long time = System.currentTimeMillis();
 
@@ -260,12 +281,24 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             EntityWrap.Type type = entityWrap.getType();
             E entity = entityWrap.getEntity();
             entityGroupMap.get(type).add(entity);
-            // 将实体状态置为正常
+            // 如果是删除状态，必须从缓存中移除
+            if (type == EntityWrap.Type.DELETE) {
+                if (log.isDebugEnabled()) {
+                    log.debug("实体已被置为删除状态,移除缓存：{}", entity);
+                }
+                entityWraps.remove();
+                removeFromQueryParamSet(entity);
+                continue;
+            }
+            // 增加、更新状态，将实体状态置为正常
             entityWrap.setType(EntityWrap.Type.DEFAULT);
 
             // 处理过期时间
             long expireTime = entityWrap.getExpireTime();
             if (expireTime < time) {
+                if (log.isDebugEnabled()) {
+                    log.debug("实体超出过期时间:{}", entity);
+                }
                 entityWraps.remove();
                 removeFromQueryParamSet(entity);
             }
@@ -294,7 +327,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         try {
             appendFile(filepath, add);
         } catch (FileNotFoundException e) {
-            log.debug("文件[" + filepath + "]未找到, 创建新文件后重试");
+            if (log.isDebugEnabled()) {
+                log.debug("文件[{}]未找到, 创建新文件后重试", filepath);
+            }
             IoUtil.createFile(filepath);
             appendFile(filepath, add);
         }
@@ -305,7 +340,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      */
     private synchronized void appendFile(String file, List<E> list) throws FileNotFoundException {
 
-        log.debug("添加数据到文件: [" + file + "]");
+        if (log.isDebugEnabled()) {
+            log.debug("添加数据到文件: [{}]", file);
+        }
 
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(
                 new FileOutputStream(file, true), Charset.forName(Constant.DEFAULT_CHARSET)))) {
@@ -326,6 +363,7 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
 
         if (!ObjectUtil.isNull(mapList)) {
             mapList.forEach(queryParamSet::remove);
+            mapList.clear();
         }
     }
 
@@ -335,6 +373,7 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
     private void removeFromDisk() throws IOException {
         List<E> update = entityGroupMap.get(EntityWrap.Type.UPDATE);
         List<E> delete = entityGroupMap.get(EntityWrap.Type.DELETE);
+
         if (!update.isEmpty()) {
             delete.addAll(update);
         }
@@ -345,7 +384,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
 
     private synchronized void copyFile(String filepath, List<E> list) throws IOException {
 
-        log.debug("拷贝数据到文件: [" + filepath + "]");
+        if (log.isDebugEnabled()) {
+            log.debug("拷贝数据到文件: [{}]", filepath);
+        }
 
         Set<K> idSet = list.stream()
                 .map(this::getIdValue)
@@ -362,9 +403,6 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
                 // 写出所有未被删除的记录
                 if (!idSet.contains(id)) {
                     pw.println(line);
-                } else {
-                    // 移除查询缓存
-                    removeFromQueryParamSet(entity);
                 }
             }
         }
@@ -393,14 +431,20 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
 
     @Override
     public void clear() throws Exception {
-        log.debug("开始持久化数据,将内存数据写入磁盘……");
+        if (log.isDebugEnabled()) {
+            log.debug("开始持久化数据,将内存数据写入磁盘……");
+        }
 
         writeDataToDisk();
 
-        log.debug("内存数据持久化成功, 清空缓存……");
         entityCacheMap.clear();
         // 清空查询缓存
         keyToQueryParamMap.clear();
+        queryParamSet.clear();
+
+        if (log.isDebugEnabled()) {
+            log.debug("内存数据持久化成功, 缓存清理成功");
+        }
     }
 
     @Override

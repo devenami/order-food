@@ -1,3 +1,9 @@
 .btn-hidden {
     display: none;
 }
+
+.thumbnail > img {
+    width: 210px;
+    height: 210px;
+    object-fit: cover;
+}

@@ -140,6 +140,10 @@ function removeOrderAtOrder(element) {
                     $(as.get(1)).hide();
                 }
             }
+            // 如果没有订单，则隐藏文字
+            if ($(element).parent().siblings().length === 0) {
+                $('#user_order').empty();
+            }
             $(element).parent().remove();
         } else {
             $(element).text(data.msg);
@@ -216,6 +220,10 @@ function removeOrderUI(orderId) {
         var col = childes.get(i);
         var inputs = $(col).children().find('input');
         if (orderId === $(inputs.get(0)).val()) {
+            // 如果没有订单，则隐藏文字
+            if (0 === $(col).siblings().length) {
+                $('#user_order').empty();
+            }
             $(col).remove();
             return;
         }
@@ -245,7 +253,7 @@ function loadProductList(orderProductMap) {
             var name = prod.name;
             var price = prod.price;
             var imageSrc = $_asset(prod.image);
-            var htmlPrefix = '<div class="col-sm-4 col-md-3">' +
+            var htmlPrefix = '<div class="col-md-3">' +
                 '                <div class="thumbnail">' +
                 '                    <img src="' + imageSrc + '">' +
                 '                    <div class="caption">' +

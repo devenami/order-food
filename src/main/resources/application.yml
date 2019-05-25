@@ -2,6 +2,7 @@
 logging:
   level:
     root: info
+    com.domain.food: debug
 
 # 业务数据配置
 business:
@@ -10,5 +11,5 @@ business:
     imagePath: file:c:/food/image
   db:
     interval: 1
-    expireTime: 5
+    expireTime: 1
     path: file:c:/food/db

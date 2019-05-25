@@ -29,6 +29,7 @@ public class UserService extends AbstractService implements IUserService {
         user.setUsername(username);
         user.setSex(sex);
         user.setDepartment(department);
+        user.setSave(System.currentTimeMillis());
         userDao.saveUser(user);
         UserVO userVO = new UserVO();
         BeanUtil.copy(user, userVO);
