@@ -26,7 +26,7 @@ public class UserDao extends AbstractDao<String, User> implements IUserDao {
 
     @Override
     public User getByUserCode(String userCode) {
-        return super.getById(userCode);
+        return super.findById(userCode);
     }
 
     @Override

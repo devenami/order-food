@@ -18,6 +18,34 @@ public class IoUtil {
     private static final Logger log = LoggerFactory.getLogger(IoUtil.class);
 
     /**
+     * 获取文件的绝对路径
+     *
+     * @param path 地址
+     * @param file 文件名
+     * @return 文件绝对地址
+     */
+    public static String localPath(String path, String file) {
+        String nPath = path;
+        String localPath;
+        if (nPath.startsWith("classpath:")) {
+            String relPath = nPath.substring(10);
+            String classloaderPath = IoUtil.class.getClassLoader().getResource("").getPath();
+            nPath = relPath.startsWith("/") ? classloaderPath + relPath.substring(1) : classloaderPath + relPath;
+        }
+        if (nPath.startsWith("file:")) {
+            nPath = nPath.substring(5);
+        }
+        if (nPath.endsWith("/") && file.startsWith("/")) {
+            localPath = nPath + file.substring(1);
+        } else if (nPath.endsWith("/") || file.startsWith("/")) {
+            localPath = nPath + file;
+        } else {
+            localPath = nPath + "/" + file;
+        }
+        return localPath;
+    }
+
+    /**
      * 从文件中读取字符串
      *
      * @param file 文件名

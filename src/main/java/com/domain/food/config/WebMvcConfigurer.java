@@ -19,6 +19,12 @@ import java.util.List;
 @Configuration
 public class WebMvcConfigurer implements org.springframework.web.servlet.config.annotation.WebMvcConfigurer {
 
+    private ConfigProperties config;
+
+    public WebMvcConfigurer(ConfigProperties config) {
+        this.config = config;
+    }
+
     /**
      * 配置接口请求方式拦截器
      */
@@ -40,6 +46,16 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
                 .addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
+
+        String imagePath = config.getWeb().getImagePath();
+        if (!imagePath.endsWith("/")) {
+            imagePath = imagePath.concat("/");
+        }
+        // 注册其余资源映射
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/")
+                .addResourceLocations("/static/")
+                .addResourceLocations(imagePath);
     }
 
     /**

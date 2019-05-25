@@ -114,11 +114,6 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         // 拷贝 map 中的键值对
         Map<String, Object> tmpMap = CollectionUtil.copy(map);
 
-        // 禁止全局数据加载，只加载可用的数据
-        if (ObjectUtil.isNull(tmpMap) || tmpMap.isEmpty()) {
-            return;
-        }
-
         // 已经使用过该参数查询
         if (!addToQueryParamSet(tmpMap)) {
             return;
@@ -207,11 +202,16 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      * 将处理好的实体添加到map中
      */
     private void addToEntityCacheMap(E entity) {
-        EntityWrap<E> entityWrap = new EntityWrap<>();
-        entityWrap.setExpireTime(getExpireTime());
-        entityWrap.setEntity(entity);
-        entityWrap.setType(EntityWrap.Type.DEFAULT);
-        getEntityCacheMap().put(getIdValue(entity), entityWrap);
+        // 检查对象是否存在缓存中
+        K idValue = getIdValue(entity);
+        EntityWrap<E> entityWrap = getEntityCacheMap().get(idValue);
+        if (ObjectUtil.isNull(entityWrap)) {
+            entityWrap = new EntityWrap<>();
+            entityWrap.setExpireTime(getExpireTime());
+            entityWrap.setEntity(entity);
+            entityWrap.setType(EntityWrap.Type.DEFAULT);
+            getEntityCacheMap().put(getIdValue(entity), entityWrap);
+        }
     }
 
     /**
@@ -239,7 +239,9 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
      */
     private String getDiskFilePath() {
         String persistFileName = getEntityHolder().getEntityAnnotation().name();
-        return properties.getDb().getFilePath(persistFileName.concat(Constant.DEFAULT_SUFFIX_JSON));
+        String path = properties.getDb().getPath();
+        String fileName = persistFileName.concat(Constant.SUFFIX_JSON);
+        return IoUtil.localPath(path, fileName);
     }
 
     /**
@@ -265,6 +267,7 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             long expireTime = entityWrap.getExpireTime();
             if (expireTime < time) {
                 entityWraps.remove();
+                removeFromQueryParamSet(entity);
             }
         }
 
@@ -396,6 +399,8 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
 
         log.debug("内存数据持久化成功, 清空缓存……");
         entityCacheMap.clear();
+        // 清空查询缓存
+        keyToQueryParamMap.clear();
     }
 
     @Override

@@ -16,9 +16,16 @@ public class Constant {
 
     public static final String DEFAULT_TEXT_UNKNOWN = "unknown";
 
-    public static final String DEFAULT_LINE_CENTER = "-";
+    public static final String SPILT_CENTER_LINE = "-";
 
-    public static final String DEFAULT_SUFFIX_JSON = ".json";
+    public static final String SPILT_COMMA = ",";
+
+    public static final String SPILT_SPOT = ".";
+
+    public static final String SUFFIX_JSON = ".json";
+
+    // 支持的图片格式
+    public static final String SUFFIX_IMAGE_SUPPORT = ".jpg,.jpeg,.png";
 
     //命令行处理器执行顺序开始值
     public static final int COMMAND_LINE_PROCESSOR_ORDER_MIN = Ordered.LOWEST_PRECEDENCE - 1000;
@@ -29,4 +36,6 @@ public class Constant {
     public static final int USER_COOKIE_EXPIRE_TIME = 1000 * 60 * 60 * 24;
     // cookie 立即过期时间
     public static final int USER_COOKIE_EXPIRE_TIME_NONE = 0;
+
+
 }

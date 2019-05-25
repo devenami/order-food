@@ -1,6 +1,8 @@
 package com.domain.food.core.listener;
 
 import com.domain.food.core.helper.IDaoClear;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
@@ -17,10 +19,10 @@ import java.util.Set;
  */
 public class DaoCommandProcessor implements ICommandLineProcessor, ApplicationContextAware {
 
+    private static final Logger log = LoggerFactory.getLogger(DaoCommandProcessor.class);
+
     private static final String COMMAND_CLEAR = "clear";
     private static final String COMMAND_CLOSE = "close";
-
-    private ApplicationContext applicationContext;
 
     private Set<IDaoClear> daoRefreshers = new HashSet<>();
 
@@ -31,6 +33,8 @@ public class DaoCommandProcessor implements ICommandLineProcessor, ApplicationCo
 
     @Override
     public void process(String command) {
+        log.error("command:[{}], 开始执行DAO缓存持久化及清理缓存", command);
+
         daoRefreshers.forEach(refresher -> {
             try {
                 if (command.equals(COMMAND_CLEAR)) {
@@ -40,6 +44,7 @@ public class DaoCommandProcessor implements ICommandLineProcessor, ApplicationCo
                 e.printStackTrace();
             }
         });
+        log.error("command:[{}], DAO缓存持久化及清理缓存执行成功", command);
     }
 
     @Override

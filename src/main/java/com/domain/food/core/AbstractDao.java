@@ -25,14 +25,19 @@ import java.util.Map;
 public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntityOperator<K, E> {
 
     @Override
-    public E getById(K id) {
+    public E findById(K id) {
         Map<String, Object> map = new HashMap<>();
         map.put(getEntityHolder().getIdField().getName(), id);
-        return getOne(map);
+        return findOne(map);
     }
 
     @Override
-    public List<E> get(Map<String, Object> map) {
+    public List<E> findAll() {
+        return find(new HashMap<>());
+    }
+
+    @Override
+    public List<E> find(Map<String, Object> map) {
         final List<E> list = new ArrayList<>();
         loadData(map);
         getEntityCacheMap().forEach((id, entityWrap) -> {
@@ -59,8 +64,8 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
     }
 
     @Override
-    public E getOne(Map<String, Object> map) {
-        List<E> list = get(map);
+    public E findOne(Map<String, Object> map) {
+        List<E> list = find(map);
         if (list.size() > 1) {
             throw new MoreThanOneElementException(JsonUtil.toJson(list));
         }
@@ -70,7 +75,7 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
     @Override
     public void save(E entity) {
         K id = getIdValue(entity);
-        E exists = getById(id);
+        E exists = findById(id);
         if (!ObjectUtil.isNull(exists)) {
             throw new IllegalArgumentException("主键已存在, id = " + id);
         }
@@ -84,7 +89,7 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
     @Override
     public void update(E entity) {
         K id = getIdValue(entity);
-        E exists = getById(id);
+        E exists = findById(id);
         if (ObjectUtil.isNull(exists)) {
             throw new IllegalArgumentException("实体不存在, id = " + id);
         }
@@ -112,7 +117,7 @@ public class AbstractDao<K, E> extends AbstractContainer<K, E> implements IEntit
 
     @Override
     public void deleteById(K id, boolean throwsException) {
-        E exists = getById(id);
+        E exists = findById(id);
         if (ObjectUtil.isNull(exists) && throwsException) {
             throw new IllegalArgumentException("实体不存在, id = " + id);
         } else {

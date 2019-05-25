@@ -29,4 +29,13 @@ public class Condition {
         }
     }
 
+    /**
+     * 检查表达式是否为true
+     */
+    public static void isTrue(boolean bool, String ext) {
+        if (!bool) {
+            throw new BusinessException(ErrorCode.CONDITION_CHECK, ext);
+        }
+    }
+
 }

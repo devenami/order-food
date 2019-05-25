@@ -1,5 +1,6 @@
 package com.domain.food.config;
 
+import com.domain.food.utils.Condition;
 import com.domain.food.utils.SessionUtil;
 import com.domain.food.vo.UserVO;
 import org.springframework.core.MethodParameter;
@@ -26,6 +27,8 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
                                   ModelAndViewContainer modelAndViewContainer,
                                   NativeWebRequest nativeWebRequest,
                                   WebDataBinderFactory webDataBinderFactory) throws Exception {
-        return SessionUtil.getUser();
+        UserVO userVO = SessionUtil.getUser();
+        Condition.notNull(userVO, "用户未登录");
+        return userVO;
     }
 }

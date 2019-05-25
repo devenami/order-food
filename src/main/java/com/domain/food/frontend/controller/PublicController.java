@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Api(tags = "未拦截接口")
 @RestController
 @RequestMapping(value = "/public", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-public class PublicAction extends AbstractController {
+public class PublicController extends AbstractController {
 
     @Autowired
     private IPublicService publicService;

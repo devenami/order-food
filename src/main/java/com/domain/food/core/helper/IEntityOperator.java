@@ -15,7 +15,14 @@ public interface IEntityOperator<K, E> {
     /**
      * 根据id获取数据
      */
-    E getById(K id);
+    E findById(K id);
+
+    /**
+     * 查询所有记录
+     *
+     * @return 所有记录
+     */
+    List<E> findAll();
 
     /**
      * 根据 name -> value 的对应关系获取实体
@@ -23,7 +30,7 @@ public interface IEntityOperator<K, E> {
      * @param map name -> value
      * @return vo
      */
-    List<E> get(Map<String, Object> map);
+    List<E> find(Map<String, Object> map);
 
     /**
      * 根据 name -> value 的对应关系获取实体
@@ -31,7 +38,7 @@ public interface IEntityOperator<K, E> {
      * @param map name -> value
      * @return vo, 如果存在多个则抛出异常
      */
-    E getOne(Map<String, Object> map);
+    E findOne(Map<String, Object> map);
 
     /**
      * 保存实体对象

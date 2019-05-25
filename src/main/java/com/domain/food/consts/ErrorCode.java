@@ -17,6 +17,10 @@ public enum ErrorCode {
     LOGIN_USER_NOT_LOGIN(5000, "用户未登录"),
     LOGIN_USER_NOT_EXISTS(5001, "用户不存在"),
     LOGIN_PASSWORD_ERROR(5002, "密码错误"),
+
+
+    /*------------------   文件上传错误 5030 - 5040   ------------------*/
+    UPLOAD_IMAGE_UNSUPPORTED_SUFFIX(5030, "图片格式不支持"),
     ;
 
     int code;

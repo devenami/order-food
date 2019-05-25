@@ -1,6 +1,5 @@
 package com.domain.food.config;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -46,23 +45,6 @@ public class ConfigProperties {
          * 数据持久化路径
          */
         private String path = "classpath:/db";
-
-        public String getFilePath(String file) {
-            if (path.startsWith("classpath:")) {
-                String relPath = path.substring(10);
-                String classloaderPath = getClass().getClassLoader().getResource("").getPath();
-                path = relPath.startsWith("/") ? classloaderPath + relPath.substring(1) : classloaderPath + relPath;
-            }
-            if (path.endsWith("/") && file.startsWith("/")) {
-                file = path + file.substring(1);
-            } else if (path.endsWith("/") || file.startsWith("/")) {
-                file = path + file;
-            } else {
-                file = path + "/" + file;
-            }
-            return file;
-        }
-
     }
 
     @Setter
@@ -81,6 +63,11 @@ public class ConfigProperties {
          * 500 -> http://www.domain.com/error.html
          */
         private Map<Integer, String> errorPath = new HashMap<>();
+
+        /**
+         * 图片存储地址
+         */
+        private String imagePath = "classpath:/images";
     }
 
 }
