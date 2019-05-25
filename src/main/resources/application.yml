@@ -10,6 +10,6 @@ business:
     showStack: false
     imagePath: file:c:/food/image
   db:
-    interval: 1
-    expireTime: 1
+    interval: 5
+    expireTime: 10
     path: file:c:/food/db

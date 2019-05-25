@@ -38,16 +38,16 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
     protected ScheduledExecutorService executor = null;
 
     // 数据持久化缓存
-    private Map<K, EntityWrap<E>> entityCacheMap = new ConcurrentHashMap<>();
+    private transient volatile Map<K, EntityWrap<E>> entityCacheMap = new ConcurrentHashMap<>();
 
     // 实体操作类型分组
-    private final Map<EntityWrap.Type, List<E>> entityGroupMap = new ConcurrentHashMap<>();
+    private transient volatile Map<EntityWrap.Type, List<E>> entityGroupMap = new ConcurrentHashMap<>();
 
     // 所有查询过的参数缓存
-    private final Set<Map<String, Object>> queryParamSet = Collections.synchronizedSet(new HashSet<>());
+    private transient volatile Set<Map<String, Object>> queryParamSet = Collections.synchronizedSet(new HashSet<>());
 
     // id与查询参数的对应关系
-    private final Map<K, List<Map<String, Object>>> keyToQueryParamMap = new ConcurrentHashMap<>();
+    private transient volatile Map<K, List<Map<String, Object>>> keyToQueryParamMap = new ConcurrentHashMap<>();
 
     /**
      * 添加到查询参数缓存
@@ -130,6 +130,8 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             if (log.isDebugEnabled()) {
                 log.debug("从磁盘加载数据被禁止：{}", map);
             }
+            // 查询时自动将缓存时间延长
+            resetExpireTime(tmpMap);
             return;
         }
 
@@ -141,6 +143,44 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             loadDataFromDisk(tmpMap);
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * 延长缓存时间
+     *
+     * @param map 查询键值对
+     */
+    private void resetExpireTime(Map<String, Object> map) {
+        long time = System.currentTimeMillis();
+        for (K id : keyToQueryParamMap.keySet()) {
+            List<Map<String, Object>> mapList = keyToQueryParamMap.get(id);
+            if (mapList.contains(map)) {
+                EntityWrap<E> entityWrap = getEntityCacheMap().get(id);
+                if (entityWrap == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("延长缓存时间,缓存不存在:{}", map);
+                    }
+                    keyToQueryParamMap.remove(id);
+                    queryParamSet.remove(map);
+                    loadData(map);
+                    return;
+                }
+                if (entityWrap.getExpireTime() <= time) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("延长缓存时间,缓存已过期:{}", map);
+                    }
+                    keyToQueryParamMap.remove(id);
+                    queryParamSet.remove(map);
+                    loadData(map);
+                    return;
+                }
+                // 延长缓存时间
+                if (log.isDebugEnabled()) {
+                    log.debug("延长缓存时间,缓存:{}, map:{}", entityWrap, map);
+                }
+                entityWrap.setExpireTime(getExpireTime());
+            }
         }
     }
 
@@ -283,11 +323,13 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             entityGroupMap.get(type).add(entity);
             // 如果是删除状态，必须从缓存中移除
             if (type == EntityWrap.Type.DELETE) {
-                if (log.isDebugEnabled()) {
-                    log.debug("实体已被置为删除状态,移除缓存：{}", entity);
-                }
                 entityWraps.remove();
                 removeFromQueryParamSet(entity);
+                if (log.isDebugEnabled()) {
+                    log.debug("实体已被置为删除状态,移除缓存：{}", entity);
+                    log.debug("当前缓存参数集合:{}", queryParamSet);
+                    log.debug("当前缓存参数Map:{}", keyToQueryParamMap);
+                }
                 continue;
             }
             // 增加、更新状态，将实体状态置为正常
@@ -296,11 +338,13 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
             // 处理过期时间
             long expireTime = entityWrap.getExpireTime();
             if (expireTime < time) {
-                if (log.isDebugEnabled()) {
-                    log.debug("实体超出过期时间:{}", entity);
-                }
                 entityWraps.remove();
                 removeFromQueryParamSet(entity);
+                if (log.isDebugEnabled()) {
+                    log.debug("实体超出过期时间:{}", entity);
+                    log.debug("当前缓存参数集合:{}", queryParamSet);
+                    log.debug("当前缓存参数Map:{}", keyToQueryParamMap);
+                }
             }
         }
 
@@ -311,6 +355,41 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
 
         // 重置分组器
         resetEntityGroupMap();
+
+        // 移除查询缓存中无效的key
+        removeUnusedQueryParam();
+
+    }
+
+    /**
+     * 移除查询缓存中无效的key
+     */
+    private void removeUnusedQueryParam() {
+        if (log.isDebugEnabled()) {
+            log.debug("清理无效查询参数开始:{}", queryParamSet);
+        }
+        Set<Map<String, Object>> exists = new HashSet<>();
+        for (List<Map<String, Object>> list : keyToQueryParamMap.values()) {
+            for (Map<String, Object> map : list) {
+                if (queryParamSet.contains(map)) {
+                    exists.add(map);
+                }
+            }
+        }
+        Iterator<Map<String, Object>> queryParam = queryParamSet.iterator();
+        while (queryParam.hasNext()) {
+            Map<String, Object> map = queryParam.next();
+            if (!exists.contains(map)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("发现无效查询参数缓存:{}", map);
+                }
+                queryParam.remove();
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("清理无效查询参数缓存结束:{}", queryParamSet);
+        }
+        exists.clear();
     }
 
     /**
@@ -362,9 +441,12 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         List<Map<String, Object>> mapList = keyToQueryParamMap.get(id);
 
         if (!ObjectUtil.isNull(mapList)) {
-            mapList.forEach(queryParamSet::remove);
+            for (Map<String, Object> map : mapList) {
+                queryParamSet.remove(map);
+            }
             mapList.clear();
         }
+        keyToQueryParamMap.remove(id);
     }
 
     /**
