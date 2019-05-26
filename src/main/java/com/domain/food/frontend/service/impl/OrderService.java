@@ -13,8 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 订单服务实现
@@ -40,7 +43,9 @@ public class OrderService extends AbstractService implements IOrderService {
         order.setProductId(productId);
         order.setProductName(product.getName());
         order.setUserCode(userVO.getUserCode());
-        order.setSave(DateUtil.getTimestamp(LocalDate.now()));
+        order.setUsername(userVO.getUsername());
+        order.setOrderDate(DateUtil.getTimestamp(LocalDate.now()));
+        order.setSave(System.currentTimeMillis());
 
         orderDao.save(order);
 
@@ -72,5 +77,35 @@ public class OrderService extends AbstractService implements IOrderService {
         });
 
         return list;
+    }
+
+    @Override
+    public List<UserVO> getOtherTodayOrder() {
+        List<Order> orderList = orderDao.findListByUserCodeAndLocalDate(null, LocalDate.now());
+        Map<UserVO, UserVO> map = new HashMap<>();
+
+        orderList.forEach(order -> {
+            UserVO userVO = new UserVO();
+            userVO.setUserCode(order.getUserCode());
+            userVO.setUsername(order.getUsername());
+            UserVO userOrder = map.get(userVO);
+            if (ObjectUtil.isNull(userOrder)) {
+                userOrder = new UserVO();
+                userOrder.setUserCode(order.getUserCode());
+                userOrder.setUsername(order.getUsername());
+                map.put(userVO, userOrder);
+            }
+            List<OrderVO> orders = userOrder.getOrders();
+            if (ObjectUtil.isNull(orders)) {
+                orders = new ArrayList<>();
+                userOrder.setOrders(orders);
+            }
+            OrderVO orderVO = new OrderVO();
+            BeanUtil.copy(order, orderVO);
+            orderVO.setOrderId(order.getId());
+            orders.add(orderVO);
+        });
+
+        return new ArrayList<>(map.values());
     }
 }

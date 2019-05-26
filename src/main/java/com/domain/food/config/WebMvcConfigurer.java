@@ -7,6 +7,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ import java.util.List;
  * @date 2019/5/15
  */
 @Configuration
-public class WebMvcConfigurer implements org.springframework.web.servlet.config.annotation.WebMvcConfigurer {
+public class WebMvcConfigurer extends WebMvcConfigurationSupport {
 
     private ConfigProperties config;
 
@@ -30,6 +31,10 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new UserMvcInterceptor())
+                .addPathPatterns("/user/**")
+                .addPathPatterns("/product/**")
+                .addPathPatterns("/order/**");
     }
 
     /**
@@ -71,8 +76,8 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
      */
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setObjectMapper(JsonUtil.getMapper());
+        MappingJackson2HttpMessageConverter converter
+                = new MappingJackson2HttpMessageConverter(JsonUtil.getMapper());
         converters.add(converter);
     }
 }

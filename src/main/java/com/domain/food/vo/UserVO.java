@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+import java.util.Objects;
+
 /**
  * 用户类
  *
@@ -35,4 +38,21 @@ public class UserVO {
      */
     private String department;
 
+    /**
+     * 用户订单
+     */
+    private List<OrderVO> orders;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserVO userVO = (UserVO) o;
+        return Objects.equals(userCode, userVO.userCode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userCode);
+    }
 }

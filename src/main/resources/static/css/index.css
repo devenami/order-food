@@ -7,3 +7,16 @@
     height: 210px;
     object-fit: cover;
 }
+
+.list-group {
+    margin-bottom: 0px;
+}
+
+.list-group .list-group-item span {
+    float: left;
+    width: 50%;
+}
+
+.list-group .list-group-item div {
+    clear: both;
+}

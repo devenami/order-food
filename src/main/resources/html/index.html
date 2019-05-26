@@ -41,9 +41,9 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <!--                <span class="sr-only">(current)</span>-->
-                <li class="active"><a href="javascript:void(0)" onclick="tabNowToOrder()">现在订餐</a></li>
-                <li><a href="javascript:void(0)">看看大家</a></li>
-                <li><a href="javascript:void(0)">订餐记录</a></li>
+                <li class="active"><a href="javascript:void(0)" onclick="tabNowToOrder(this)">现在订餐</a></li>
+                <li><a href="javascript:void(0)" onclick="tabLookOther(this)">看看大家</a></li>
+                <li><a href="javascript:void(0)" onclick="tabMyOrder(this)">订餐记录</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="javascript:void(0)" id="userName"></a></li>
@@ -55,6 +55,23 @@
 
 <div id="container" class="container" style="margin: 0 auto; width: 1000px">
 
+    <ul class="list-group">
+        <li class="list-group-item">
+            <span>商品1</span>
+            <span>10:30</span>
+            <div></div>
+        </li>
+        <li class="list-group-item">
+            <span>商品2</span>
+            <span>10:30</span>
+            <div></div>
+        </li>
+        <li class="list-group-item">
+            <span>商品3</span>
+            <span>10:30</span>
+            <div></div>
+        </li>
+    </ul>
 </div>
 
 </body>

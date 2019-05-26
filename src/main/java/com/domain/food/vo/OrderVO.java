@@ -27,6 +27,9 @@ public class OrderVO {
     // 用户编码
     private String userCode;
 
+    // 下单日期
+    private Long orderDate;
+
     // 创建时间
     private Long save;
 

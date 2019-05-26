@@ -54,4 +54,10 @@ public class OrderController extends AbstractController {
     public Result<List<OrderVO>> getOrderList(UserVO userVO, Long day) {
         return Result.success(orderService.getOrderList(userVO, day));
     }
+
+    @GetMapping("/list/other")
+    @ApiOperation("查询所有人今日的订单")
+    public Result<List<UserVO>> getOtherTodayOrder() {
+        return Result.success(orderService.getOtherTodayOrder());
+    }
 }

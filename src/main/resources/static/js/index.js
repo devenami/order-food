@@ -21,11 +21,100 @@ function setUser() {
     });
 }
 
-/* ------------------------------------------------ 页面调用函数 ----------------------------------------------- */
+/* ------------------------------------------------ 我的订餐记录页面调用函数 ----------------------------------------------- */
+function tabMyOrder(btn) {
+    switchTab(btn);
+    555
+    loadMyOrderPage();
+}
+
+function loadMyOrderPage() {
+    $('#container').empty();
+    $_get('/order/list/day', function (data) {
+        if (data.code === 200) {
+            var htmlBody = '';
+            var orders = data.data;
+            for (var i in orders) {
+                var order = orders[i];
+                var productName = order.productName;
+                var date = new Date(parseInt(order.save));
+                var time = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes();
+                htmlBody += '<li class="list-group-item">' +
+                    '           <span>' + productName + '</span>' +
+                    '           <span>' + time + '</span>' +
+                    '           <div></div>' +
+                    '        </li>';
+            }
+            $('#container').append('<ul class="list-group">' + htmlBody + '</ul>');
+        }
+    });
+}
+
+
+/* ------------------------------------------------ 查看其他人页面调用函数 ----------------------------------------------- */
+function tabLookOther(btn) {
+    switchTab(btn);
+    loadOtherOrderPage();
+}
+
+function switchTab(btn) {
+    var lis = $(btn).parent().siblings().removeClass('active');
+    $(btn).parent().addClass('active');
+}
+
+function loadOtherOrderPage() {
+    $('#container').empty();
+    var htmlBefore = '<table class="table table-bordered table-hover">' +
+        '        <tr>' +
+        '            <th>用户编号</th>' +
+        '            <th>用户名</th>' +
+        '            <th>订单&下单时间</th>' +
+        '        </tr>';
+    var htmlAfter = '</table>';
+    var htmlBody = '';
+    $_get('/order/list/other', function (data) {
+        if (data.code === 200) {
+            var users = data.data;
+            for (var index in users) {
+                var user = users[index];
+                var userCode = user.userCode;
+                var username = user.username;
+                var orders = user.orders;
+
+                htmlBody += '<tr>' +
+                    '            <td>' + userCode + '</td>' +
+                    '            <td>' + username + '</td>' +
+                    '            <td>' +
+                    '                <ul class="list-group">';
+                for (var i in orders) {
+                    var order = orders[i];
+                    var productName = order.productName;
+                    var date = new Date(parseInt(order.save));
+                    var time = date.getHours() + ':' + date.getMinutes();
+                    htmlBody += '<li class="list-group-item">' +
+                        '           <span>' + productName + '</span>' +
+                        '           <span>' + time + '</span>' +
+                        '           <div></div>' +
+                        '        </li>';
+                }
+                htmlBody += '                </ul>' +
+                    '            </td>' +
+                    '        </tr>';
+            }
+            $('#container').append(htmlBefore + htmlBody + htmlAfter);
+        }
+    });
+
+
+}
+
+
+/* ------------------------------------------------ 下订单页面调用函数 ----------------------------------------------- */
 /**
  * 加载现在订餐页面
  */
-function tabNowToOrder() {
+function tabNowToOrder(btn) {
+    switchTab(btn);
     loadProductPage();
 }
 

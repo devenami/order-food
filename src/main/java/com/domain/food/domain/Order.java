@@ -43,6 +43,16 @@ public class Order {
     private String userCode;
 
     /**
+     * 用户名
+     */
+    private String username;
+
+    /**
+     * 下单日期
+     */
+    private Long orderDate;
+
+    /**
      * 创建时间
      */
     private Long save;

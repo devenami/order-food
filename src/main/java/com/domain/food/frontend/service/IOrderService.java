@@ -38,4 +38,9 @@ public interface IOrderService {
      * @return 订单列表
      */
     List<OrderVO> getOrderList(UserVO userVO, Long day);
+
+    /**
+     * 查询用户今日订单
+     */
+    List<UserVO> getOtherTodayOrder();
 }
