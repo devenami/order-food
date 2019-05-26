@@ -130,3 +130,51 @@ date.getSeconds();  // 获取秒数(0-59)
 3、`ICommandLineProcessor`为所有监听器的父接口，监听器需要实现该接口中的方法，同时需要将自身注册到Spring IOC中。当有指定的命令获取到以后，该监听器的方法会被调用。
 
 4、`DaoCommandLineProcessor`和`ApplicationExitCommandProcessor`为监听器的实现类。
+
+## 项目发布
+
+1、`Nginx`配置
+```
+// 配置反向代理
+location / {
+    proxy_pass http://127.0.0.1:8080;
+}
+// 配置静态资源转发
+
+location ~* \.(htm|html|gif|jpg|jpeg|png|css|js|icon)$ {
+    root  /opt/res/web/;
+    autoindex off;
+}
+```
+
+2、静态资源拷贝
+```
+将html和static文件夹下的内容拷贝到 /opt/res/web/ (注：该目录为nginx静态资源代理目录，可在nginx配置文件中修改) 目录下。
+```
+
+3、js配置
+```js
+// 配置静态资源的请求路径
+// 配置 /opt/res/web/js/base.js
+var assets = '/image';
+var default_image_url = '/default.jpg';
+```
+
+4、java程序配置
+```yml
+// 修改application.yml, 该yml文件位于jar包以外的目录
+# 业务数据配置
+business:
+  web:
+    showStack: false
+    imagePath: file:/opt/res/web/image   // 修改为nginx静态资源的目录，这里修改为 /opt/res/web/image
+  db:
+    interval: 5
+    expireTime: 10
+    path: file:/opt/res/food/db   // 修改为个人数据文件的存放地址
+```
+
+5、启动应用并指定配置文件的路径
+```shell
+java -jar //自己jar包的位置 --spring.config.location=//个人外置的application.yml文件的位置
+```

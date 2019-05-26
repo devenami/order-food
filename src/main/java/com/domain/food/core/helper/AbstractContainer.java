@@ -473,6 +473,7 @@ public abstract class AbstractContainer<K, E> extends EntityBeanAnalyser<K, E>
         Set<K> idSet = list.stream()
                 .map(this::getIdValue)
                 .collect(Collectors.toSet());
+        IoUtil.createFile(filepath);
         String tmpFile = filepath.concat(".tmp");
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(
                 new FileOutputStream(tmpFile, true), Charset.forName(Constant.DEFAULT_CHARSET)));

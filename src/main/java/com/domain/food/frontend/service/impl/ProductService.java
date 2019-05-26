@@ -48,7 +48,7 @@ public class ProductService extends AbstractService implements IProductService {
         }
 
         String path = config.getWeb().getImagePath();
-        String imageRelativePath = "image_" + System.currentTimeMillis() + "/" + KeyUtil.uuid().concat(suffix);
+        String imageRelativePath = "/" + System.currentTimeMillis() + "/" + KeyUtil.uuid().concat(suffix);
         String imagePath = IoUtil.localPath(path, imageRelativePath);
 
         // 将文件存储到本地
@@ -67,6 +67,9 @@ public class ProductService extends AbstractService implements IProductService {
         product.setId(KeyUtil.uuid());
         product.setUserCode(userVO.getUserCode());
         product.setName(name);
+        if (!image.startsWith("/")) {
+            image = "/".concat(image);
+        }
         product.setImage(image);
         product.setPrice(price);
         product.setSave(System.currentTimeMillis());
