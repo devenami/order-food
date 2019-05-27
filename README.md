@@ -104,6 +104,16 @@ date.getSeconds();  // 获取秒数(0-59)
     <optional>true</optional>
 </dependency>
 ```
+9、spring文件上传配置改变
+`spring.http.multipart`更改为`spring.servlet.multipart`
+```yaml
+#spring 文件上传配置
+spring:
+  servlet: 
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+```
 
 ## 数据持久层
 

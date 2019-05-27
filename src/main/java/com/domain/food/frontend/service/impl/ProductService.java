@@ -7,10 +7,7 @@ import com.domain.food.core.AbstractService;
 import com.domain.food.dao.IProductDao;
 import com.domain.food.domain.Product;
 import com.domain.food.frontend.service.IProductService;
-import com.domain.food.utils.BeanUtil;
-import com.domain.food.utils.ExceptionUtil;
-import com.domain.food.utils.IoUtil;
-import com.domain.food.utils.KeyUtil;
+import com.domain.food.utils.*;
 import com.domain.food.vo.ProductVO;
 import com.domain.food.vo.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,7 +46,7 @@ public class ProductService extends AbstractService implements IProductService {
         }
 
         String path = config.getWeb().getImagePath();
-        String imageRelativePath = "/" + System.currentTimeMillis() + "/" + KeyUtil.uuid().concat(suffix);
+        String imageRelativePath = "/" + DateUtil.getTimestamp(LocalDate.now()) + "/" + KeyUtil.uuid().concat(suffix);
         String imagePath = IoUtil.localPath(path, imageRelativePath);
 
         // 将文件存储到本地
