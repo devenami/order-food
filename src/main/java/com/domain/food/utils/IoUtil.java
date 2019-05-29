@@ -3,6 +3,7 @@ package com.domain.food.utils;
 import com.domain.food.consts.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 
 import java.awt.geom.IllegalPathStateException;
 import java.io.*;
@@ -16,6 +17,20 @@ import java.io.*;
 public class IoUtil {
 
     private static final Logger log = LoggerFactory.getLogger(IoUtil.class);
+
+    /**
+     * 获取资源的路径
+     *
+     * @param resource 资源
+     * @return 绝对路径
+     */
+    public static String localPath(Resource resource) {
+        try {
+            return resource.getURL().getPath();
+        } catch (IOException e) {
+            throw ExceptionUtil.unchecked(e);
+        }
+    }
 
     /**
      * 获取文件的绝对路径
@@ -66,7 +81,7 @@ public class IoUtil {
     /**
      * 创建新文件
      */
-    public static void createFile(String path) {
+    public static File createFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
             try {
@@ -79,6 +94,7 @@ public class IoUtil {
                 throw new RuntimeException("创建文件失败");
             }
         }
+        return file;
     }
 
     /**
@@ -90,7 +106,8 @@ public class IoUtil {
         File file = new File(path);
         if (file.exists()) {
             while (!file.delete()) {
-                log.error("删除文件 [" + path + "]失败, 第" + ++counter + "次重试。");
+                log.error("删除文件 [" + path + "]失败, 第" + counter++ + "次重试。");
+                System.gc();
                 if (counter > maxTry) {
                     throw new IllegalPathStateException("删除[" + path + "]重试多次后仍失败。");
                 }

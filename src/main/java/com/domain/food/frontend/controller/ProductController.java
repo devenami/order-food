@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -35,7 +36,7 @@ public class ProductController extends AbstractController {
 
     @ApiOperation("上传商品图片")
     @PostMapping("/image/upload")
-    public Result<String> uploadImage(MultipartFile file) {
+    public Result<String> uploadImage(MultipartFile file) throws IOException {
         return Result.success(productService.uploadImage(file));
     }
 

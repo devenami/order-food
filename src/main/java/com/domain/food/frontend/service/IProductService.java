@@ -4,6 +4,7 @@ import com.domain.food.vo.ProductVO;
 import com.domain.food.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -39,7 +40,7 @@ public interface IProductService {
      * @param file 图片
      * @return 图片地址
      */
-    String uploadImage(MultipartFile file);
+    String uploadImage(MultipartFile file) throws IOException;
 
     /**
      * 查询商品列表

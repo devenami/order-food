@@ -36,7 +36,7 @@ public class ProductService extends AbstractService implements IProductService {
     private ConfigProperties config;
 
     @Override
-    public String uploadImage(MultipartFile file) {
+    public String uploadImage(MultipartFile file) throws IOException {
         String fileName = file.getOriginalFilename();
         // 验证文件格式是否支持
         List<String> supportSuffix = Arrays.asList(Constant.SUFFIX_IMAGE_SUPPORT.split(Constant.SPILT_COMMA));
@@ -45,17 +45,25 @@ public class ProductService extends AbstractService implements IProductService {
             ErrorCode.UPLOAD_IMAGE_UNSUPPORTED_SUFFIX.shutdown();
         }
 
+        fileName = KeyUtil.uuid().concat(suffix);
         String path = config.getWeb().getImagePath();
-        String imageRelativePath = "/" + DateUtil.getTimestamp(LocalDate.now()) + "/" + KeyUtil.uuid().concat(suffix);
+        String imageRelativePath = "/" + DateUtil.formatDate(LocalDate.now(), DateUtil.FORMAT_DATA_SIMPLE) + "/" + fileName;
         String imagePath = IoUtil.localPath(path, imageRelativePath);
 
-        // 将文件存储到本地
-        IoUtil.createFile(imagePath);
-        try {
-            file.transferTo(new File(imagePath));
-        } catch (IOException e) {
-            throw ExceptionUtil.unchecked(e);
-        }
+        // 临时目录
+        String userDir = System.getProperty("java.io.tmpdir");
+        String srcPath = IoUtil.localPath(userDir, fileName);
+
+        // 将spring上传的临时文件转换为图像文件
+        File srcFile = IoUtil.createFile(srcPath);
+        file.transferTo(srcFile);
+
+        // 将图片处理成缩略图
+        ImageUtil.cutSquareImage(srcPath, imagePath);
+
+        // 删除临时文件
+        IoUtil.delete(srcPath);
+
         return imageRelativePath;
     }
 

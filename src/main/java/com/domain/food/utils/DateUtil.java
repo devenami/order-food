@@ -16,19 +16,31 @@ public class DateUtil {
     public static final String FORMAT_DATE = "yyyy-mm-dd";
     public static final String FORMAT_DATETIME = "yyyy-mm-dd HH:MM:ss";
 
+    /**
+     * 将日期格式化成 yyyy-mm-dd格式
+     */
     public static String formatDate(LocalDate date) {
         return formatDate(date, FORMAT_DATE);
     }
 
+    /**
+     * 将日期格式化成指定格式
+     */
     public static String formatDate(LocalDate date, String format) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(format);
         return date.format(dateTimeFormatter);
     }
 
+    /**
+     * 将时间格式化成 yyyy-mm-dd HH:MM:ss 格式
+     */
     public static String formatDateTime(LocalDateTime datetime) {
         return formatDateTime(datetime, FORMAT_DATETIME);
     }
 
+    /**
+     * 将时间格式化成指定格式
+     */
     public static String formatDateTime(LocalDateTime dateTime, String format) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(format);
         return dateTime.format(dateTimeFormatter);

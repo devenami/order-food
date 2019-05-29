@@ -342,7 +342,7 @@ function loadProductList(orderProductMap) {
             var name = prod.name;
             var price = prod.price;
             var imageSrc = $_asset(prod.image);
-            var htmlPrefix = '<div class="col-md-3">' +
+            var htmlPrefix = '<div class="col-md-3 col-xs-12">' +
                 '                <div class="thumbnail">' +
                 '                    <img src="' + imageSrc + '">' +
                 '                    <div class="caption">' +
