@@ -1,7 +1,5 @@
 package com.domain.food.config;
 
-import org.springframework.http.HttpStatus;
-
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
