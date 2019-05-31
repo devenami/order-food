@@ -13,6 +13,7 @@ spring:
 
 # 业务数据配置
 business:
+  environment: develop
   web:
     showStack: false
     imagePath: file:c:/food/image

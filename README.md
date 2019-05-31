@@ -114,6 +114,11 @@ spring:
       max-file-size: 10MB
       max-request-size: 15MB
 ```
+10、根据部署环境决定是否跨域
+（1）自定义`AllowOriginFilter`过滤器，设置跨域`header`。
+（2）在`WebMvcConfigurer`中使用`FilterRegistrationBean`将过滤器注册到Spring环境内。
+（3）自定义`ConditionalOnEnvironment`注解和`OnEnvironmentConditional`类，用于根据当前环境判断是否注册过滤器对象。
+（4）在`WebMvcConfigurer`注册过滤器的方法上标注`ConditionalOnEnvironment`注解，指定启用环境。
 
 ## 数据持久层
 

@@ -1,6 +1,8 @@
 package com.domain.food.config;
 
 import com.domain.food.utils.JsonUtil;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -79,5 +81,20 @@ public class WebMvcConfigurer extends WebMvcConfigurationSupport {
         MappingJackson2HttpMessageConverter converter
                 = new MappingJackson2HttpMessageConverter(JsonUtil.getMapper());
         converters.add(converter);
+    }
+
+    /**
+     * 创建跨域过滤器
+     * 只在运行环境为开发环境和测试环境时启用
+     */
+    @Bean
+    @ConditionalOnEnvironment({Environment.DEVELOP, Environment.TEST})
+    public FilterRegistrationBean<AllowOriginFilter> allowOriginFilter() {
+        FilterRegistrationBean<AllowOriginFilter> bean = new FilterRegistrationBean<>();
+        bean.setFilter(new AllowOriginFilter());
+        bean.addUrlPatterns("/*");
+        bean.setName("AllowOriginFilter");
+        bean.setOrder(1);
+        return bean;
     }
 }

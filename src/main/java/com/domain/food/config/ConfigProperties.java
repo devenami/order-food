@@ -21,6 +21,8 @@ import java.util.Map;
 @ConfigurationProperties("business")
 public class ConfigProperties {
 
+    private Environment environment = Environment.PRODUCT;
+
     @NestedConfigurationProperty
     private final Web web = new Web();
 
